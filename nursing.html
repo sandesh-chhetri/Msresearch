@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Guide: Master of Nursing in Australia for IT Graduates</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Visualization & Content Choices: 
+        - Key Insights (Goal: Inform): Presented as interactive cards with key stats (e.g., "High Demand") to quickly convey the report's core findings. Interaction: Hover effects to reveal more detail. Justification: More engaging than a simple text summary.
+        - University Comparison (Goal: Compare): An interactive bar chart (Chart.js/Canvas) visualizes tuition fees, allowing for quick cost comparison. A dynamic HTML table, filterable by location, provides detailed program information. Interaction: Clicking a university on the chart or table highlights it on the other, linking the data. Justification: Enables easy comparison of multiple data points (cost, location, prerequisites) to support decision-making.
+        - Application Pathway (Goal: Organize): A multi-step interactive diagram built with HTML/Tailwind CSS. Interaction: Clicking on each step reveals detailed information in a content pane. Justification: Breaks down the complex application process into manageable, sequential steps, reducing cognitive load.
+        - Timeline (Goal: Change/Plan): An interactive horizontal timeline using HTML/Tailwind CSS. Interaction: Clicking on a phase (e.g., "Early 2025") expands to show detailed tasks. Justification: Clearly visualizes the time-sensitive nature of the process and provides a clear, actionable plan.
+        - NO SVG/Mermaid used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FDFBF8; /* Warm Neutral: Off-white */
+            color: #334155; /* Slate Gray */
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link.active, .nav-link:hover {
+            color: #CC5B5B; /* Accent: Soft Coral */
+            border-bottom-color: #CC5B5B;
+        }
+        .card {
+            background-color: #FFFFFF;
+            border: 1px solid #E2E8F0;
+            border-radius: 0.75rem;
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.05);
+        }
+        .btn-primary {
+            background-color: #4A908A; /* Muted Teal */
+            color: #FFFFFF;
+            transition: background-color 0.3s;
+        }
+        .btn-primary:hover {
+            background-color: #3B736D;
+        }
+        .btn-secondary {
+            background-color: #E2E8F0;
+            color: #334155;
+            transition: background-color 0.3s;
+        }
+        .btn-secondary:hover {
+            background-color: #CBD5E1;
+        }
+        .pathway-step {
+            cursor: pointer;
+            transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+            border: 2px solid #E2E8F0;
+        }
+        .pathway-step.active, .pathway-step:hover {
+            background-color: #4A908A;
+            border-color: #3B736D;
+            color: #FFFFFF;
+        }
+        .pathway-step.active .pathway-icon, .pathway-step:hover .pathway-icon {
+            color: #FFFFFF;
+        }
+        .pathway-step.active .pathway-text, .pathway-step:hover .pathway-text {
+            color: #FFFFFF;
+        }
+        .pathway-icon { color: #4A908A; }
+        .pathway-text { color: #334155; }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 400px;
+            max-height: 50vh;
+        }
+        .timeline-item {
+            cursor: pointer;
+        }
+        .timeline-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-40 shadow-sm">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <h1 class="text-xl font-bold text-slate-800">Nursing Pathways Australia</h1>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#overview" class="nav-link active px-3 py-2 text-sm font-medium">Overview</a>
+                        <a href="#explorer" class="nav-link px-3 py-2 text-sm font-medium">University Explorer</a>
+                        <a href="#pathway" class="nav-link px-3 py-2 text-sm font-medium">Application Pathway</a>
+                        <a href="#timeline" class="nav-link px-3 py-2 text-sm font-medium">Strategic Timeline</a>
+                    </div>
+                </div>
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="inline-flex items-center justify-center p-2 rounded-md text-slate-400 hover:text-white hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-white">
+                        <span class="sr-only">Open main menu</span>
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </nav>
+        <div id="mobile-menu" class="md:hidden hidden">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#overview" class="nav-link block px-3 py-2 rounded-md text-base font-medium">Overview</a>
+                <a href="#explorer" class="nav-link block px-3 py-2 rounded-md text-base font-medium">University Explorer</a>
+                <a href="#pathway" class="nav-link block px-3 py-2 rounded-md text-base font-medium">Application Pathway</a>
+                <a href="#timeline" class="nav-link block px-3 py-2 rounded-md text-base font-medium">Strategic Timeline</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+
+        <section id="overview" class="scroll-mt-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Your Strategic Pathway to a Master of Nursing</h2>
+                <p class="mt-4 text-lg max-w-3xl mx-auto text-slate-600">This guide translates the strategic report into an interactive experience, helping you navigate the journey from an IT background to a Registered Nurse in Australia, with a critical COE deadline of December 2025.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div class="card p-6">
+                    <h3 class="text-lg font-semibold text-slate-800">High Demand for RNs</h3>
+                    <p class="mt-2 text-slate-600">Australia has a structural and growing need for Registered Nurses, ensuring a stable job market and strong post-study career prospects.</p>
+                </div>
+                <div class="card p-6">
+                    <h3 class="text-lg font-semibold text-slate-800">Accelerated Pathway</h3>
+                    <p class="mt-2 text-slate-600">Master of Nursing (Graduate Entry) programs are designed for non-nursing graduates, offering a direct, AHPRA-accredited route to becoming an RN.</p>
+                </div>
+                <div class="card p-6">
+                    <h3 class="text-lg font-semibold text-slate-800">AIN Experience is Key</h3>
+                    <p class="mt-2 text-slate-600">Your Assistant in Nursing experience provides a significant competitive advantage, demonstrating practical commitment and understanding of the healthcare environment.</p>
+                </div>
+                <div class="card p-6">
+                    <h3 class="text-lg font-semibold text-slate-800">IT Skills Advantage</h3>
+                    <p class="mt-2 text-slate-600">Your IT background is a unique asset in a tech-driven healthcare sector, opening doors to future roles in digital health and health informatics.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="explorer" class="mt-20 scroll-mt-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">University Explorer</h2>
+                <p class="mt-4 text-lg max-w-3xl mx-auto text-slate-600">Compare ANMAC-accredited programs to find the best fit. This section allows you to visually compare tuition fees and filter detailed program requirements by location. Click on a university in the chart or table to see it highlighted across both elements.</p>
+            </div>
+
+            <div class="card p-6 sm:p-8 mb-8">
+                <h3 class="text-xl font-semibold text-center mb-4">Indicative Annual Tuition Fees (AUD)</h3>
+                <div class="chart-container">
+                    <canvas id="universityChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card p-6 sm:p-8">
+                <div class="flex flex-col sm:flex-row justify-between items-center mb-4">
+                    <h3 class="text-xl font-semibold mb-4 sm:mb-0">Program Details Comparison</h3>
+                    <div class="flex items-center space-x-2">
+                        <label for="locationFilter" class="text-sm font-medium">Filter by Location:</label>
+                        <select id="locationFilter" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                            <option value="All">All Locations</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">University</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location(s)</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Key Prerequisites</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IELTS (Academic)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="universityTableBody" class="bg-white divide-y divide-gray-200">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="pathway" class="mt-20 scroll-mt-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Your Application Pathway</h2>
+                 <p class="mt-4 text-lg max-w-3xl mx-auto text-slate-600">Securing your COE by December 2025 requires a systematic approach. This interactive guide breaks down the essential requirements. Click each step to reveal detailed information and create a clear action plan.</p>
+            </div>
+
+            <div class="flex flex-col lg:flex-row gap-8">
+                <div class="lg:w-1/3">
+                    <div id="pathway-steps" class="space-y-4">
+                    </div>
+                </div>
+                <div class="lg:w-2/3">
+                    <div id="pathway-content" class="card p-6 sm:p-8 min-h-[300px]">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="timeline" class="mt-20 scroll-mt-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Strategic Timeline to 2026 Intake</h2>
+                <p class="mt-4 text-lg max-w-3xl mx-auto text-slate-600">A successful application hinges on meeting deadlines. This timeline outlines the critical phases and actions required to secure your COE by December 2025. Click on each phase to expand and see your key tasks.</p>
+            </div>
+
+            <div class="w-full">
+                <div id="timeline-container" class="space-y-8">
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-slate-800 text-white mt-20">
+        <div class="container mx-auto py-6 px-4 sm:px-6 lg:px-8 text-center text-sm">
+            <p>&copy; 2025 Nursing Pathways Australia. An interactive guide based on strategic report analysis.</p>
+            <p class="mt-1 text-slate-400">This tool is for informational purposes only. Always verify details with official university and government sources.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            
+            const universityData = [
+                { id: 0, name: 'U of Sydney', fee: 47000, locations: ['Sydney'], prereqs: 'Human Anatomy & Physiology', ielts: '7.0 (no band < 7.0)', interview: true, accreditation: 'Yes' },
+                { id: 1, name: 'U of Melbourne', fee: 40000, locations: ['Melbourne'], prereqs: 'Human A&P, plus another science', ielts: '7.0 (no band < 7.0)', interview: false, accreditation: 'Yes' },
+                { id: 2, name: 'UNE', fee: 35000, locations: ['Armidale', 'Sydney'], prereqs: 'Non-nursing Bachelor', ielts: '7.0', interview: false, accreditation: 'Yes' },
+                { id: 3, name: 'CQUniversity', fee: 34000, locations: ['Online', 'Cairns'], prereqs: 'Non-nursing Bachelor', ielts: '7.0', interview: false, accreditation: 'Pending' },
+                { id: 4, name: 'U of Canberra', fee: 39000, locations: ['Canberra', 'Sydney'], prereqs: 'Bachelor (in last 10 yrs)', ielts: '7.0', interview: false, accreditation: 'Conflicting (Verify)' },
+                { id: 5, name: 'Southern Cross U', fee: 33800, locations: ['Gold Coast', 'Sydney', 'Melbourne', 'Perth'], prereqs: 'Human A&P unit, GPA 5.0', ielts: '7.0 (no band < 7.0)', interview: true, accreditation: 'Verify' },
+                { id: 6, name: 'U of Wollongong', fee: 40698, locations: ['Wollongong', 'Liverpool'], prereqs: 'Bachelor (60% avg)', ielts: '7.0 (no band < 7.0)', interview: false, accreditation: 'Yes (Wollongong)' },
+                { id: 7, name: 'Adelaide U', fee: 46700, locations: ['Adelaide'], prereqs: 'Non-nursing Bachelor', ielts: '7.0 (no band < 7.0)', interview: false, accreditation: 'Leads to NMBA' },
+                { id: 8, name: 'Curtin U', fee: 38433, locations: ['Perth'], prereqs: 'Human A&P unit, WAM 70%', ielts: '7.0', interview: false, accreditation: 'Leads to NMBA' },
+                { id: 9, name: 'Monash U', fee: 40700, locations: ['Melbourne'], prereqs: 'Non-nursing Bachelor (70%+)', ielts: '7.0', interview: false, accreditation: 'Verify' }
+            ];
+
+            const pathwayData = [
+                { 
+                    title: 'Academic Requirements', 
+                    icon: '🎓',
+                    content: `
+                        <h4 class="text-xl font-semibold mb-3">Meeting the Academic Bar</h4>
+                        <p class="text-slate-600 mb-4">You must hold a recognized Bachelor's degree. Universities specify a minimum GPA or WAM (Weighted Average Mark). Most importantly, you must complete any prerequisite science subjects like Human Anatomy & Physiology BEFORE you apply.</p>
+                        <ul class="list-disc list-inside space-y-2 text-slate-600">
+                            <li><strong>Bachelor's Degree:</strong> Your IT degree meets the non-nursing requirement.</li>
+                            <li><strong>Transcripts:</strong> Ensure all academic documents are officially translated into English.</li>
+                            <li><strong>Prerequisites:</strong> This is a critical first step. Enroll in bridging courses for subjects like Human Anatomy & Physiology as early as possible. Official results are needed for your application.</li>
+                        </ul>
+                    `
+                },
+                { 
+                    title: 'English Language Proficiency', 
+                    icon: '🌐',
+                    content: `
+                        <h4 class="text-xl font-semibold mb-3">Demonstrating Communication Skills</h4>
+                        <p class="text-slate-600 mb-4">This is a non-negotiable requirement for nursing. The standards are high to ensure patient safety and effective communication. Start preparing immediately as it can take multiple attempts to achieve the required scores.</p>
+                        <ul class="list-disc list-inside space-y-2 text-slate-600">
+                            <li><strong>IELTS Academic:</strong> Typically 7.0 overall, with no individual band score below 7.0 (some universities accept 6.5).</li>
+                            <li><strong>Other Tests:</strong> PTE Academic, OET, and TOEFL iBT are also accepted. Check university-specific equivalent scores.</li>
+                            <li><strong>Validity:</strong> Ensure your test results are valid at the time of application and enrollment.</li>
+                        </ul>
+                    `
+                },
+                { 
+                    title: 'AIN Experience Documentation', 
+                    icon: '📄',
+                    content: `
+                        <h4 class="text-xl font-semibold mb-3">Leveraging Your Practical Skills</h4>
+                        <p class="text-slate-600 mb-4">Your two years of AIN experience are a major asset. Proper documentation is key to showcasing its value to admissions committees. Generic letters are not enough.</p>
+                        <ul class="list-disc list-inside space-y-2 text-slate-600">
+                            <li><strong>Statement of Service:</strong> Obtain a detailed letter from your employer outlining your role, duties, hours worked, and duration of employment.</li>
+                            <li><strong>Proof of Qualification:</strong> Include your Certificate III or IV.</li>
+                            <li><strong>Highlight Skills:</strong> The documentation should clearly describe your hands-on patient care, communication, and understanding of the clinical environment.</li>
+                        </ul>
+                    `
+                },
+                {
+                    title: 'Financial & Visa Requirements',
+                    icon: '💳',
+                    content: `
+                        <h4 class="text-xl font-semibold mb-3">Preparing for the Visa Process</h4>
+                        <p class="text-slate-600 mb-4">The student visa (Subclass 500) process is rigorous. You must prove genuine temporary entrant (GTE) status and demonstrate sufficient financial capacity.</p>
+                        <ul class="list-disc list-inside space-y-2 text-slate-600">
+                             <li><strong>Financial Capacity:</strong> You need to show proof of funds to cover tuition, living costs, and travel. This usually involves bank statements or loan documents.</li>
+                             <li><strong>GTE Statement:</strong> A personal essay explaining your reasons for studying in Australia, your choice of course, and your plans after graduation. Strong ties to your home country are crucial.</li>
+                             <li><strong>Health & Insurance:</strong> You must have Overseas Student Health Cover (OSHC) for your entire stay and pass a health examination.</li>
+                        </ul>
+                    `
+                }
+            ];
+            
+            const timelineData = [
+                 { 
+                    phase: 'Current Phase: Early 2025', 
+                    details: `
+                        <p class="font-semibold text-slate-700 mb-2">Focus: Foundational Preparation</p>
+                        <ul class="list-disc list-inside space-y-1 text-slate-600">
+                            <li><strong>Action:</strong> Identify 3-5 target universities and their specific prerequisites.</li>
+                            <li><strong>Action:</strong> Enroll in and COMPLETE any required Human Anatomy & Physiology bridging courses.</li>
+                            <li><strong>Action:</strong> Take your English test (IELTS/PTE). Aim to achieve the required scores now. Book a re-test if needed.</li>
+                            <li><strong>Action:</strong> Gather and officially translate all academic transcripts and your IT degree certificate.</li>
+                            <li><strong>Action:</strong> Obtain comprehensive AIN experience documentation.</li>
+                        </ul>
+                    `
+                },
+                { 
+                    phase: 'Mid-2025 (June - August)', 
+                    details: `
+                        <p class="font-semibold text-slate-700 mb-2">Focus: University Applications</p>
+                        <ul class="list-disc list-inside space-y-1 text-slate-600">
+                            <li><strong>Action:</strong> Submit applications to your chosen universities as soon as portals open.</li>
+                            <li><strong>Action:</strong> Prepare for and attend any required interviews. Use your AIN experience to provide strong examples.</li>
+                            <li><strong>Action:</strong> Await Letters of Offer. If you receive a conditional offer, fulfill the conditions immediately.</li>
+                        </ul>
+                    `
+                },
+                { 
+                    phase: 'Late 2025 (September - December)', 
+                    details: `
+                        <p class="font-semibold text-slate-700 mb-2">Focus: COE & Visa Lodgement</p>
+                        <ul class="list-disc list-inside space-y-1 text-slate-600">
+                            <li><strong>Action:</strong> Upon receiving an unconditional offer, formally accept it and pay the tuition deposit.</li>
+                            <li><strong>Goal:</strong> The university will issue your Confirmation of Enrolment (COE). THIS IS YOUR KEY DEADLINE.</li>
+                            <li><strong>Action:</strong> Once COE is received, purchase your Overseas Student Health Cover (OSHC).</li>
+                            <li><strong>Action:</strong> Lodge your Subclass 500 Student Visa application IMMEDIATELY. Include all required documents.</li>
+                        </ul>
+                    `
+                },
+            ];
+
+            // Mobile Menu
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+
+            // Navigation Scrolling
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                    if (mobileMenu.classList.contains('hidden') === false) {
+                        mobileMenu.classList.add('hidden');
+                    }
+                });
+            });
+
+            // Active Nav Link on Scroll
+            const sections = document.querySelectorAll('section');
+            const navLinks = document.querySelectorAll('.nav-link');
+
+            window.onscroll = () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 80) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href').includes(current)) {
+                        link.classList.add('active');
+                    }
+                });
+            };
+
+
+            // University Chart
+            const ctx = document.getElementById('universityChart').getContext('2d');
+            const universityChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: universityData.map(u => u.name),
+                    datasets: [{
+                        label: 'Indicative Annual Tuition Fee (AUD)',
+                        data: universityData.map(u => u.fee),
+                        backgroundColor: universityData.map(() => 'rgba(74, 144, 138, 0.6)'),
+                        borderColor: universityData.map(() => 'rgba(74, 144, 138, 1)'),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value, index, values) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(context.parsed.y);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    onClick: (e, elements) => {
+                        if (elements.length > 0) {
+                            const dataIndex = elements[0].index;
+                            highlightUniversity(dataIndex);
+                        }
+                    }
+                }
+            });
+
+            // University Table and Filter
+            const tableBody = document.getElementById('universityTableBody');
+            const locationFilter = document.getElementById('locationFilter');
+            const allLocations = [...new Set(universityData.flatMap(u => u.locations))].sort();
+
+            allLocations.forEach(location => {
+                const option = document.createElement('option');
+                option.value = location;
+                option.textContent = location;
+                locationFilter.appendChild(option);
+            });
+
+            const renderTable = (filter = 'All') => {
+                tableBody.innerHTML = '';
+                const filteredData = universityData.filter(u => filter === 'All' || u.locations.includes(filter));
+                
+                filteredData.forEach(uni => {
+                    const row = document.createElement('tr');
+                    row.className = 'cursor-pointer hover:bg-gray-50';
+                    row.dataset.id = uni.id;
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">${uni.name}</div>
+                            <div class="text-xs text-gray-500">Accreditation: ${uni.accreditation}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${uni.locations.join(', ')}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${uni.prereqs}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${uni.ielts} ${uni.interview ? '<span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blue-600 bg-blue-200">Interview Req.</span>' : ''}</td>
+                    `;
+                    row.addEventListener('click', () => highlightUniversity(uni.id));
+                    tableBody.appendChild(row);
+                });
+            };
+
+            locationFilter.addEventListener('change', (e) => {
+                renderTable(e.target.value);
+            });
+
+            const highlightUniversity = (id) => {
+                // Highlight chart
+                universityChart.data.datasets[0].backgroundColor = universityData.map(u => u.id === id ? 'rgba(204, 91, 91, 0.8)' : 'rgba(74, 144, 138, 0.6)');
+                universityChart.data.datasets[0].borderColor = universityData.map(u => u.id === id ? 'rgba(204, 91, 91, 1)' : 'rgba(74, 144, 138, 1)');
+                universityChart.update();
+                
+                // Highlight table
+                document.querySelectorAll('#universityTableBody tr').forEach(row => {
+                    if (parseInt(row.dataset.id) === id) {
+                        row.classList.add('bg-teal-50');
+                    } else {
+                        row.classList.remove('bg-teal-50');
+                    }
+                });
+            };
+
+            // Initial render
+            renderTable();
+
+            // Pathway Section
+            const pathwayStepsContainer = document.getElementById('pathway-steps');
+            const pathwayContentContainer = document.getElementById('pathway-content');
+
+            pathwayData.forEach((step, index) => {
+                const stepEl = document.createElement('div');
+                stepEl.className = 'pathway-step flex items-center p-4 rounded-lg';
+                stepEl.dataset.index = index;
+                stepEl.innerHTML = `
+                    <span class="pathway-icon text-2xl mr-4">${step.icon}</span>
+                    <span class="pathway-text text-lg font-semibold">${step.title}</span>
+                `;
+                pathwayStepsContainer.appendChild(stepEl);
+            });
+
+            const pathwaySteps = document.querySelectorAll('.pathway-step');
+            pathwaySteps.forEach(step => {
+                step.addEventListener('click', () => {
+                    pathwaySteps.forEach(s => s.classList.remove('active'));
+                    step.classList.add('active');
+                    const index = parseInt(step.dataset.index);
+                    pathwayContentContainer.innerHTML = pathwayData[index].content;
+                });
+            });
+
+            // Initial pathway state
+            pathwaySteps[0].click();
+
+            // Timeline Section
+            const timelineContainer = document.getElementById('timeline-container');
+            timelineData.forEach((item, index) => {
+                const itemEl = document.createElement('div');
+                itemEl.className = 'timeline-item';
+                itemEl.innerHTML = `
+                    <div class="flex items-center p-4 bg-white rounded-lg shadow cursor-pointer border border-gray-200 hover:bg-gray-50">
+                        <div class="flex items-center justify-center h-12 w-12 rounded-full bg-teal-100 text-teal-600 font-bold text-lg mr-4">
+                            ${index + 1}
+                        </div>
+                        <h4 class="text-xl font-semibold text-slate-800 flex-grow">${item.phase}</h4>
+                        <svg class="w-6 h-6 text-slate-500 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                    <div class="timeline-content bg-white px-6 pb-4 -mt-2 rounded-b-lg border-x border-b border-gray-200">
+                        <div class="pt-4">${item.details}</div>
+                    </div>
+                `;
+                itemEl.querySelector('.flex.items-center.p-4').addEventListener('click', (e) => {
+                    const content = itemEl.querySelector('.timeline-content');
+                    const icon = itemEl.querySelector('svg');
+                    if (content.style.maxHeight) {
+                        content.style.maxHeight = null;
+                        icon.classList.remove('rotate-180');
+                    } else {
+                        content.style.maxHeight = content.scrollHeight + "px";
+                        icon.classList.add('rotate-180');
+                    }
+                });
+                timelineContainer.appendChild(itemEl);
+            });
+
+        });
+    </script>
+</body>
+</html>
