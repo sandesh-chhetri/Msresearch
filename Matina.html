@@ -1132,65 +1132,97 @@
     }
 
 
-    function showFeedback(isCorrect, feedback, correctAnswer, elementsToDisable, container) {
-        attemptCount++;
-        feedback.style.display = "block";
-        const questionIsOver = isCorrect || attemptCount >= MAX_ATTEMPTS;
+      function showFeedback(isCorrect, feedback, correctAnswer, elementsToDisable) {
+      attemptCount++;
+      feedback.style.display = "block";
+      const questionIsOver = isCorrect || attemptCount >= MAX_ATTEMPTS;
 
-        if (isCorrect) {
-            const compliments = ["Perfect, Maya! 💖 You're brilliant!", "Amazing work, Maya! 🌟", "Excellent, Maya! 😍", "Outstanding, Maya! 👏", "Fantastic, Maya! ✨", "Wonderful, Maya! 🎉", "Chuppa, well done😘", "Baala, Matina 😚"];
-            feedback.textContent = `✅ ${compliments[Math.floor(Math.random() * compliments.length)]}`;
-            feedback.className = "feedback correct";
-            if (attemptCount === 1) correctAnswers++;
-        } else if (questionIsOver) {
-            feedback.textContent = `❌ The correct answer is: ${correctAnswer}. Don't worry, you'll get the next one! 💪`;
-            feedback.className = "feedback incorrect";
-        } else {
-            const encouragements = ["Almost there, Maya! ❤️ Try again!", "You're getting closer! 💪", "Don't give up, Maya! 🌈", "So close! ✨ One more try!"];
-            const attemptsLeft = MAX_ATTEMPTS - attemptCount;
-            feedback.textContent = `❌ ${encouragements[Math.floor(Math.random() * encouragements.length)]} (${attemptsLeft} attempt${attemptsLeft > 1 ? 's' : ''} left)`;
-            feedback.className = "feedback incorrect";
-        }
+      if (isCorrect) {
+          const compliments = ["Perfect, Maya! 💖 You're brilliant!", "Amazing work, Maya! 🌟", "Excellent, Maya! 😍", "Outstanding, Maya! 👏", "Fantastic, Maya! ✨", "Wonderful, Maya! 🎉"];
+          feedback.textContent = `✅ ${compliments[Math.floor(Math.random() * compliments.length)]}`;
+          feedback.className = "feedback correct";
+          if (attemptCount === 1) correctAnswers++;
+      } else if (questionIsOver) {
+          feedback.textContent = `❌ The correct answer is: ${correctAnswer}. Don't worry, you'll get the next one! 💪`;
+          feedback.className = "feedback incorrect";
+      } else {
+          const encouragements = ["Almost there, Maya! ❤️ Try again!", "You're getting closer! 💪", "Don't give up, Maya! 🌈", "So close! ✨ One more try!"];
+          const attemptsLeft = MAX_ATTEMPTS - attemptCount;
+          feedback.textContent = `❌ ${encouragements[Math.floor(Math.random() * encouragements.length)]} (${attemptsLeft} attempt${attemptsLeft > 1 ? 's' : ''} left)`;
+          feedback.className = "feedback incorrect";
+      }
 
-        if (questionIsOver) {
-            if (elementsToDisable.inputs) elementsToDisable.inputs.forEach(el => el.disabled = true);
-            if (elementsToDisable.buttons) elementsToDisable.buttons.forEach(el => el.disabled = true);
-            if (elementsToDisable.dragAndDrop) {
-                container.querySelectorAll('.rearrange-item').forEach(item => item.draggable = false);
-            }
-            setTimeout(() => nextQuestion(), isCorrect ? 2000 : 3500);
-        }
-    }
+      if (questionIsOver) {
+          if (elementsToDisable.inputs) elementsToDisable.inputs.forEach(el => el.disabled = true);
+          if (elementsToDisable.buttons) elementsToDisable.buttons.forEach(el => el.disabled = true);
+          if (elementsToDisable.dragAndDrop) {
+              document.querySelectorAll('.rearrange-item').forEach(item => item.draggable = false);
+          }
+
+          // 👉 Add continue button
+          const continueBtn = document.createElement("button");
+          continueBtn.className = "next-btn";
+          continueBtn.innerText = "Continue →";
+          continueBtn.onclick = () => nextQuestion();
+          feedback.appendChild(document.createElement("br"));
+          feedback.appendChild(continueBtn);
+      }
+  }
+
 
 
     // ... (mcq, true-false, fill-blank, output checking functions are unchanged)
-    function checkMCQAnswer(selected, correct, feedback, allButtons) {
-        if (allButtons[0].disabled) return;
-        const isCorrect = selected === correct;
-        const selectedButton = allButtons.find(btn => btn.innerText === selected);
-        if (isCorrect) {
-            selectedButton.classList.add('correct');
-        } else {
-            selectedButton.classList.add('incorrect');
-            const correctButton = allButtons.find(btn => btn.innerText === correct);
-            if (correctButton) correctButton.classList.add('correct');
-        }
-        showFeedback(isCorrect, feedback, `"${correct}"`, { buttons: allButtons });
-    }
+      function checkMCQAnswer(selected, correct, feedback, allButtons) {
+      if (allButtons[0].disabled) return;
 
-    function checkTrueFalseAnswer(selected, correct, feedback, allButtons) {
-        if (allButtons[0].disabled) return;
-        const isCorrect = (selected === "True") === correct;
-        const selectedButton = allButtons.find(btn => btn.innerText === selected);
-        if (isCorrect) {
-            selectedButton.classList.add('correct');
-        } else {
-            selectedButton.classList.add('incorrect');
-            const correctButton = allButtons.find(btn => (btn.innerText === "True") === correct);
-            if (correctButton) correctButton.classList.add('correct');
-        }
-        showFeedback(isCorrect, feedback, correct.toString(), { buttons: allButtons });
-    }
+      const isCorrect = selected === correct;
+      const selectedButton = allButtons.find(btn => btn.innerText === selected);
+
+      if (isCorrect) {
+          selectedButton.classList.add('correct');
+      } else {
+          selectedButton.classList.add('incorrect');
+      }
+
+      const elementsToDisable = { buttons: allButtons };
+
+      // ✅ Show correct answer only if question is over
+      if (isCorrect || attemptCount + 1 >= MAX_ATTEMPTS) {
+          const correctButton = allButtons.find(btn => btn.innerText === correct);
+          if (correctButton && !correctButton.classList.contains('correct')) {
+              correctButton.classList.add('correct');
+          }
+      }
+
+      showFeedback(isCorrect, feedback, `"${correct}"`, elementsToDisable);
+  }
+
+
+      function checkTrueFalseAnswer(selected, correct, feedback, allButtons) {
+      if (allButtons[0].disabled) return;
+
+      const isCorrect = (selected === "True") === correct;
+      const selectedButton = allButtons.find(btn => btn.innerText === selected);
+
+      if (isCorrect) {
+          selectedButton.classList.add('correct');
+      } else {
+          selectedButton.classList.add('incorrect');
+      }
+
+      const elementsToDisable = { buttons: allButtons };
+
+      // ✅ Show correct answer only if question is over
+      if (isCorrect || attemptCount + 1 >= MAX_ATTEMPTS) {
+          const correctButton = allButtons.find(btn => (btn.innerText === "True") === correct);
+          if (correctButton && !correctButton.classList.contains('correct')) {
+              correctButton.classList.add('correct');
+          }
+      }
+
+      showFeedback(isCorrect, feedback, correct.toString(), elementsToDisable);
+  }
+
 
     function checkFillBlankAnswer(inputs, answerArray, feedback, submitBtn) {
         const userAnswers = inputs.map(input => input.value.trim());
