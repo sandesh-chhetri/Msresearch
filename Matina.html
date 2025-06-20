@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PHP Quiz App for Maya 💖</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 2rem 3rem;
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 2rem;
+      font-size: 2.5rem;
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .type-selector {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin: 2rem 0;
+    }
+
+    .type-btn {
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      padding: 1rem 1.5rem;
+      border-radius: 15px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .type-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 10px;
+      background: #e0e0e0;
+      border-radius: 10px;
+      margin: 1rem 0;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea, #764ba2);
+      border-radius: 10px;
+      transition: width 0.3s ease;
+    }
+
+    .question-container {
+      background: #f8f9ff;
+      padding: 2rem;
+      border-radius: 15px;
+      margin: 1rem 0;
+      border-left: 5px solid #667eea;
+    }
+
+    h3 {
+      font-size: 1.3rem;
+      color: #333;
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+
+    .option-btn {
+      background: white;
+      color: #333;
+      border: 2px solid #667eea;
+      padding: 0.8rem 1.5rem;
+      border-radius: 10px;
+      font-size: 1rem;
+      margin: 0.5rem 0.5rem 0.5rem 0;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      min-width: 120px;
+    }
+
+    .option-btn:hover:not(:disabled) {
+      background: #667eea;
+      color: white;
+      transform: translateY(-2px);
+    }
+    
+    .option-btn:disabled {
+        cursor: not-allowed;
+        opacity: 0.7;
+    }
+
+    .option-btn.correct {
+      background: #4CAF50;
+      color: white;
+      border-color: #4CAF50;
+    }
+
+    .option-btn.incorrect {
+      background: #f44336;
+      color: white;
+      border-color: #f44336;
+    }
+
+    input[type="text"], input[type="number"], input {
+      width: 100%;
+      padding: 0.8rem;
+      margin: 0.5rem 0;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 1rem;
+      transition: border-color 0.3s ease;
+      box-sizing: border-box;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 10px rgba(102, 126, 234, 0.2);
+    }
+    
+    input:disabled {
+        background: #f1f1f1;
+        cursor: not-allowed;
+    }
+
+    .submit-btn {
+      background: linear-gradient(45deg, #4CAF50, #45a049);
+      color: white;
+      border: none;
+      padding: 1rem 2rem;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin: 1rem 0.5rem 1rem 0;
+    }
+
+    .submit-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+    }
+
+    .submit-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .next-btn {
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      padding: 1rem 2rem;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin: 1rem 0.5rem;
+    }
+
+    .next-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .nav-btn {
+      background: #6c757d;
+      color: white;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-bottom: 1rem;
+    }
+
+    .nav-btn:hover {
+      background: #5a6268;
+      transform: translateY(-1px);
+    }
+
+    .feedback {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 1.1rem;
+      text-align: center;
+    }
+
+    .feedback.correct {
+      background: #d4edda;
+      color: #155724;
+      border: 2px solid #c3e6cb;
+    }
+
+    .feedback.incorrect {
+      background: #f8d7da;
+      color: #721c24;
+      border: 2px solid #f5c6cb;
+    }
+
+    .score-display {
+      text-align: center;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      padding: 2rem;
+      border-radius: 15px;
+      margin: 2rem 0;
+    }
+
+    .score-display h2 {
+      margin: 0 0 1rem 0;
+      font-size: 2rem;
+    }
+
+    .score-display p {
+      font-size: 1.3rem;
+      margin: 0.5rem 0;
+    }
+
+    .match-container {
+      display: grid;
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+
+    .match-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.5rem;
+      background: white;
+      border-radius: 8px;
+      border: 1px solid #e0e0e0;
+    }
+
+    .match-key {
+      font-weight: 600;
+      color: #667eea;
+      min-width: 120px;
+    }
+
+    .rearrange-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin: 1rem 0;
+    }
+
+    /* Add these new styles to your existing CSS */
+    .rearrange-board {
+    display: flex;
+    gap: 2rem;
+    margin-top: 1.5rem;
+    }
+    .rearrange-source, .rearrange-target {
+    flex: 1;
+    padding: 1rem;
+    border-radius: 10px;
+    min-height: 150px;
+    }
+    .rearrange-source {
+    background: #fff3cd;
+    border: 2px dashed #ffeeba;
+    }
+    .rearrange-target {
+    background: #e9ecef;
+    border: 2px dashed #ced4da;
+    }
+    .rearrange-item {
+    background: white;
+    padding: 0.8rem;
+    margin-bottom: 0.5rem;
+    border-radius: 5px;
+    font-family: monospace;
+    cursor: grab;
+    border: 1px solid #dee2e6;
+    transition: all 0.2s ease;
+    -webkit-user-select: none;
+    user-select: none;
+    }
+    .rearrange-item:active {
+    cursor: grabbing;
+    background: #f1f3f5;
+    }
+    .drop-zone {
+    background: #ced4da;
+    height: 45px;
+    margin-bottom: 0.5rem;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6c757d;
+    font-style: italic;
+    border: 2px dashed #adb5bd;
+    transition: background-color 0.2s ease;
+    }
+    .drop-zone.drag-over {
+        background-color: #b8c2cc;
+        border-color: #6c757d;
+    }
+    .drop-zone .rearrange-item {
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 1.5rem 1rem;
+        margin: 1rem;
+      }
+
+      h1 {
+        font-size: 2rem;
+      }
+
+      .type-selector {
+        grid-template-columns: 1fr;
+      }
+
+      .option-btn {
+        width: 100%;
+        margin: 0.3rem 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>PHP Quiz for Maya 💖</h1>
+    <div id="quiz-container"></div>
+  </div>
+
+<script>
+    // Complete PHP Quiz Questions Database
+    const questions = [
+        // ... (The questions array is correct and remains unchanged) ...
+      // Fill in the Blanks
+      {
+        type: "fill-blank",
+        question: "PHP scripts start with ________ and end with ________.",
+        answer: ["<?php", "?>"]
+      },
+      {
+        type: "fill-blank",
+        question: "To output text in PHP, we use the ________ statement.",
+        answer: ["echo"]
+      },
+      {
+        type: "fill-blank",
+        question: "PHP variables start with the ________ symbol.",
+        answer: ["$"]
+      },
+      {
+        type: "fill-blank",
+        question: "To include another PHP file, use the ________ or ________ statement.",
+        answer: ["include", "require"]
+      },
+      {
+        type: "fill-blank",
+        question: "To concatenate strings in PHP, use the ________ operator.",
+        answer: ["."]
+      },
+      {
+        type: "fill-blank",
+        question: "Arrays in PHP are created using the ________ function or ________ syntax.",
+        answer: ["array()", "[]"]
+      },
+      {
+        type: "fill-blank",
+        question: "To check if a variable is set, use the ________ function.",
+        answer: ["isset()"]
+      },
+      {
+        type: "fill-blank",
+        question: "Comments in PHP can be written using ________ or ________ symbols.",
+        answer: ["//", "#"]
+      },
+      {
+        type: "fill-blank",
+        question: "PHP files are saved with the ________ extension.",
+        answer: [".php"]
+      },
+      {
+        type: "fill-blank",
+        question: "To define a constant in PHP, use the ________ function.",
+        answer: ["define"]
+      },
+      {
+        type: "fill-blank",
+        question: "To start a session in PHP, use the ________ function.",
+        answer: ["session_start()"]
+      },
+      {
+        type: "fill-blank",
+        question: "To end a PHP script immediately, use the ________ statement.",
+        answer: ["exit"]
+      },
+      {
+        type: "fill-blank",
+        question: "To read a file line by line, you can use ________ function.",
+        answer: ["fgets"]
+        },
+        {
+  type: "fill-blank",
+  question: "Functions in PHP are declared using the ________ keyword.",
+  answer: ["function"]
+},
+{
+  type: "fill-blank",
+  question: "To define a constant in PHP, use the ________ function.",
+  answer: ["define()"]
+},
+{
+  type: "fill-blank",
+  question: "The ________ keyword is used to stop the execution of a loop or switch.",
+  answer: ["break"]
+},
+{
+  type: "fill-blank",
+  question: "The ________ keyword is used to skip the current iteration of a loop.",
+  answer: ["continue"]
+},
+{
+  type: "fill-blank",
+  question: "The ________ operator is used to suppress error messages in PHP.",
+  answer: ["@"]
+},
+
+      // Multiple Choice Questions
+      {
+        type: "mcq",
+        question: "Which of these is a valid variable in PHP?",
+        options: ["$2var", "$var-name", "$_var", "var$"],
+        answer: "$_var"
+      },
+      {
+        type: "mcq",
+        question: "Which superglobal contains form data sent via POST method?",
+        options: ["$_GET", "$_POST", "$_SESSION", "$_SERVER"],
+        answer: "$_POST"
+      },
+      {
+        type: "mcq",
+        question: "Which of the following is NOT a PHP data type?",
+        options: ["integer", "string", "boolean", "character"],
+        answer: "character"
+      },
+      {
+        type: "mcq",
+        question: "What will be the output of: echo 5 == \"5\"; ?",
+        options: ["true", "false", "1", "0"],
+        answer: "1"
+      },
+      {
+        type: "mcq",
+        question: "Which function is used to connect to a MySQL database?",
+        options: ["mysql_connect()", "connect_mysql()", "mysqli_connect()", "db_connect()"],
+        answer: "mysqli_connect()"
+      },
+      {
+        type: "mcq",
+        question: "Which loop is guaranteed to execute at least once?",
+        options: ["for", "while", "do-while", "foreach"],
+        answer: "do-while"
+      },
+      {
+        type: "mcq",
+        question: "What does PHP stand for?",
+        options: ["Personal Home Page", "PHP: Hypertext Preprocessor", "Private Home Page", "Professional Hypertext Processor"],
+        answer: "PHP: Hypertext Preprocessor"
+      },
+      {
+        type: "mcq",
+        question: "Which function is used to get the length of an array?",
+        options: ["length()", "size()", "count()", "array_length()"],
+        answer: "count()"
+      },
+      {
+        type: "mcq",
+        question: "Which keyword is used to create a class in PHP?",
+        options: ["define", "class", "struct", "object"],
+        answer: "class"
+        },
+        {
+        type: "mcq",
+        question: "Which function is used to redirect to another page?",
+        options: ["redirect()", "go()", "header()", "location()"],
+        answer: "header()"
+        },
+        {
+        type: "mcq",
+        question: "Which symbol is used to access object methods in PHP?",
+        options: [".", "->", "::", ":"],
+        answer: "->"
+        },
+        {
+        type: "mcq",
+        question: "Which function is used to include a file only once?",
+        options: ["include", "require", "include_once", "file_get_contents"],
+        answer: "include_once"
+        },
+        {
+        type: "mcq",
+        question: "Which method destroys a session in PHP?",
+        options: ["session_reset()", "session_stop()", "session_destroy()", "session_unset()"],
+        answer: "session_destroy()"
+        },
+        {
+  type: "mcq",
+  question: "What does the '===' operator do in PHP?",
+  options: ["Compares value", "Compares type", "Compares both value and type", "Assigns value"],
+  answer: "Compares both value and type"
+},
+{
+  type: "mcq",
+  question: "Which method is used to start a session in PHP?",
+  options: ["start_session()", "session_begin()", "session_start()", "begin_session()"],
+  answer: "session_start()"
+},
+{
+  type: "mcq",
+  question: "Which of the following is used to send output to the browser in PHP?",
+  options: ["echo", "send", "write", "printout"],
+  answer: "echo"
+},
+{
+  type: "mcq",
+  question: "Which function is used to get the type of a variable?",
+  options: ["var_type()", "gettype()", "type_of()", "typeof()"],
+  answer: "gettype()"
+},
+{
+  type: "mcq",
+  question: "Which statement is used to include and evaluate a specified file?",
+  options: ["import", "require", "insert", "add"],
+  answer: "require"
+},
+
+      // True/False
+      {
+        type: "true-false",
+        question: "PHP is a server-side scripting language.",
+        answer: true
+      },
+      {
+        type: "true-false",
+        question: "The isset() function returns false if the variable is NULL.",
+        answer: true
+      },
+      {
+        type: "true-false",
+        question: "In PHP, 'echo' and 'print' can both output strings.",
+        answer: true
+      },
+      {
+        type: "true-false",
+        question: "The !== operator checks for both value and type inequality.",
+        answer: true
+      },
+      {
+        type: "true-false",
+        question: "PHP variables are case-sensitive.",
+        answer: true
+      },
+      {
+        type: "true-false",
+        question: "PHP functions are case-insensitive.",
+        answer: true
+      },
+      {
+        type: "true-false",
+        question: "PHP supports multiple inheritance.",
+        answer: false
+      },
+      {
+        type: "true-false",
+        question: "Arrays in PHP can hold different data types.",
+        answer: true
+      },
+      {
+        type: "true-false",
+        question: "PHP is loosely typed, meaning you don't need to declare variable types.",
+        answer: true
+        },
+        {
+        type: "true-false",
+        question: "The echo and return statements do the same thing in PHP.",
+        answer: false
+        },
+        {
+        type: "true-false",
+        question: "Using '===' checks both value and data type in PHP.",
+        answer: true
+        },
+        {
+        type: "true-false",
+        question: "The default method for HTML forms is POST.",
+        answer: false
+        },
+        {
+        type: "true-false",
+        question: "PHP can be embedded directly into HTML.",
+        answer: true
+        },
+        {
+  type: "true-false",
+  question: "Variables in PHP must be declared with a data type.",
+  answer: false
+},
+{
+  type: "true-false",
+  question: "The require statement stops script execution if the file is not found.",
+  answer: true
+},
+{
+  type: "true-false",
+  question: "Functions can return multiple values directly in PHP.",
+  answer: false
+},
+{
+  type: "true-false",
+  question: "You can declare constants inside functions in PHP.",
+  answer: true
+},
+{
+  type: "true-false",
+  question: "PHP code must always be enclosed within <?php and ?> tags.",
+  answer: true
+},
+
+      // Match the Following
+      {
+        type: "match",
+        question: "Match PHP functions to their descriptions",
+        pairs: {
+          "strlen()": "Get string length",
+          "strtoupper()": "Convert string to uppercase",
+          "isset()": "Check if variable is declared",
+          "include": "Include a file"
+        }
+      },
+      {
+        type: "match",
+        question: "Match superglobals to their usage",
+        pairs: {
+          "$_GET": "Data sent via URL",
+          "$_POST": "Data sent via form",
+          "$_SESSION": "Session data",
+          "$_COOKIE": "Cookie data"
+        }
+      },
+      {
+        type: "match",
+        question: "Match data types to examples",
+        pairs: {
+          "string": "Hello World",
+          "integer": "42",
+          "boolean": "true",
+          "array": "[1,2,3]"
+        }
+      },
+      {
+        type: "match",
+        question: "Match PHP error types to their meanings",
+        pairs: {
+            "E_NOTICE": "Non-critical runtime notice",
+            "E_WARNING": "Runtime warning",
+            "E_ERROR": "Fatal error",
+            "E_PARSE": "Compile-time parse error"
+        }
+        },
+        {
+        type: "match",
+        question: "Match PHP file functions to their purpose",
+        pairs: {
+            "fopen()": "Open a file",
+            "fclose()": "Close a file",
+            "fread()": "Read from file",
+            "fwrite()": "Write to file"
+        }
+        },
+        {
+  type: "match",
+  question: "Match string functions to their actions",
+  pairs: {
+    "strtolower()": "Convert to lowercase",
+    "substr()": "Extract substring",
+    "strpos()": "Find position of first occurrence",
+    "str_replace()": "Replace all occurrences"
+  }
+},
+{
+  type: "match",
+  question: "Match loop types to their use",
+  pairs: {
+    "for": "Iterates a fixed number of times",
+    "while": "Iterates while condition is true",
+    "do-while": "Executes at least once",
+    "foreach": "Iterates over arrays"
+  }
+},
+      // Output Prediction
+      {
+        type: "output",
+        question: "What is the output of: echo 2 + 3 * 4;",
+        answer: "14"
+      },
+      {
+        type: "output",
+        question: "What is the output of: echo strlen('Hello');",
+        answer: "5"
+      },
+      {
+        type: "output",
+        question: "What is the output of: echo strtoupper('php');",
+        answer: "PHP"
+      },
+      {
+        type: "output",
+        question: "What is the output of: echo 10 / 4;",
+        answer: "2.5"
+      },
+      {
+        type: "output",
+        question: "What is the output of: echo 'Hello' . ' ' . 'World';",
+        answer: "Hello World"
+      },
+      {
+        type: "output",
+        question: "What is the output of: echo count([1,2,3,4]);",
+        answer: "4"
+      },
+
+    {
+        type: "output",
+        question: "What is the output of: echo 10 % 3;",
+        answer: "1"
+        },
+        {
+        type: "output",
+        question: "What is the output of: echo gettype(true);",
+        answer: "boolean"
+        },
+        {
+        type: "output",
+        question: "What is the output of: echo strtolower('PHP');",
+        answer: "php"
+        },
+        {
+        type: "output",
+        question: "What is the output of: echo isset($x) ? 'Yes' : 'No'; // $x is not declared",
+        answer: "No"
+        },
+        {
+        type: "output",
+        question: "What is the output of: echo count([]);",
+        answer: "0"
+        },
+        {
+  type: "output",
+  question: "What is the output of: echo gettype(10.5);",
+  answer: "double"
+},
+{
+  type: "output",
+  question: "What is the output of: echo 2 ** 3;",
+  answer: "8"
+},
+{
+  type: "output",
+  question: "What is the output of: echo 10 % 3;",
+  answer: "1"
+},
+{
+  type: "output",
+  question: "What is the output of: echo is_array([1, 2, 3]) ? 'Yes' : 'No';",
+  answer: "Yes"
+},
+
+      // Rearranging Code
+      {
+        type: "rearrange",
+        question: "Rearrange to print Hello World:",
+        answer: [
+          "<?php",
+          "echo \"Hello World\";",
+          "?>"
+        ]
+      },
+      {
+        type: "rearrange",
+        question: "Rearrange to define a function that returns the square of a number:",
+        answer: [
+          "function square($n) {",
+          "  return $n * $n;",
+          "}"
+        ]
+      },
+      {
+        type: "rearrange",
+        question: "Rearrange to create a simple if statement:",
+        answer: [
+          "if ($x > 5) {",
+          "  echo 'Greater than 5';",
+          "}"
+        ]
+      },
+      {
+        type: "rearrange",
+        question: "Rearrange to define and call a function that prints 'Hi Maya':",
+        answer: [
+            "function greet() {",
+            "  echo 'Hi Maya';",
+            "}",
+            "greet();"
+        ]
+        },
+        {
+        type: "rearrange",
+        question: "Rearrange to connect to MySQL using mysqli:",
+        answer: [
+            "$conn = mysqli_connect('localhost', 'root', '', 'mydb');",
+            "if (!$conn) {",
+            "  die('Connection failed');",
+            "}"
+        ]
+        },
+        {
+  type: "rearrange",
+  question: "Rearrange to use a foreach loop to print array items:",
+  answer: [
+    "$colors = ['red', 'green', 'blue'];",
+    "foreach ($colors as $color) {",
+    "  echo $color . '\\n';",
+    "}"
+  ]
+},
+{
+  type: "rearrange",
+  question: "Rearrange to check if a number is even:",
+  answer: [
+    "$num = 4;",
+    "if ($num % 2 == 0) {",
+    "  echo 'Even';",
+    "} else {",
+    "  echo 'Odd';",
+    "}"
+  ]
+}
+    ];
+
+    // Quiz state
+    let currentIndex = 0;
+    let attemptCount = 0;
+    let currentType = null;
+    let correctAnswers = 0;
+    let questionStates = {};
+    const MAX_ATTEMPTS = 2;
+
+    function getFilteredQuestions(type) {
+        return questions.filter(q => q.type === type);
+    }
+
+    function showTypeSelector() {
+        const container = document.getElementById("quiz-container");
+        container.innerHTML = `
+        <div style="text-align: center; margin: 2rem 0;">
+          <h2 style="color: #333; margin-bottom: 2rem;">Choose Your Challenge 🎯</h2>
+          <div class="type-selector">
+            <button class="type-btn" onclick="startQuizType('fill-blank')">Fill in the Blanks</button>
+            <button class="type-btn" onclick="startQuizType('mcq')">Multiple Choice</button>
+            <button class="type-btn" onclick="startQuizType('true-false')">True or False</button>
+            <button class="type-btn" onclick="startQuizType('match')">Match (Dropdown)</button>
+            <button class="type-btn" onclick="startQuizType('output')">Output Prediction</button>
+            <button class="type-btn" onclick="startQuizType('rearrange')">Rearrange (Drag & Drop)</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function startQuizType(type) {
+        currentType = type;
+        currentIndex = questionStates[type]?.currentIndex || 0;
+        correctAnswers = questionStates[type]?.correctAnswers || 0;
+        loadNextQuestion();
+    }
+
+    function loadNextQuestion() {
+        const filtered = getFilteredQuestions(currentType);
+        if (currentIndex >= filtered.length) {
+            showResults(filtered);
+            return;
+        }
+
+        const q = filtered[currentIndex];
+        const container = document.getElementById("quiz-container");
+        attemptCount = 0;
+
+        const progressPercent = ((currentIndex) / filtered.length) * 100;
+        const progressHTML = `
+        <div class="progress-bar"><div class="progress-fill" style="width: ${progressPercent}%"></div></div>
+        <p style="text-align: center; color: #666; margin: 0.5rem 0;">
+          Question ${currentIndex + 1} of ${filtered.length} | Score: ${correctAnswers}/${currentIndex}
+        </p>`;
+        const navHTML = `<button class="nav-btn" onclick="showTypeSelector()">← Back to Menu</button>`;
+        const questionDiv = document.createElement('div');
+        questionDiv.className = 'question-container';
+        questionDiv.innerHTML = `<h3>${q.question}</h3>`;
+
+        createQuestionInterface(q, questionDiv);
+
+        container.innerHTML = progressHTML + navHTML;
+        container.appendChild(questionDiv);
+    }
+
+    function createQuestionInterface(q, container) {
+        const feedback = document.createElement("div");
+        feedback.className = "feedback";
+        feedback.style.display = "none";
+
+        // ... (mcq, true-false, fill-blank, output interfaces are unchanged)
+        if (q.type === "mcq") {
+            const buttonGroup = document.createElement('div');
+            q.options.forEach(opt => {
+                const btn = document.createElement("button");
+                btn.className = "option-btn";
+                btn.innerText = opt;
+                buttonGroup.appendChild(btn);
+            });
+            buttonGroup.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON') {
+                    checkMCQAnswer(e.target.innerText, q.answer, feedback, Array.from(buttonGroup.children));
+                }
+            });
+            container.appendChild(buttonGroup);
+        }
+
+        if (q.type === "true-false") {
+            const buttonGroup = document.createElement('div');
+            ["True", "False"].forEach(ans => {
+                const btn = document.createElement("button");
+                btn.className = "option-btn";
+                btn.innerText = ans;
+                buttonGroup.appendChild(btn);
+            });
+            buttonGroup.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON') {
+                    checkTrueFalseAnswer(e.target.innerText, q.answer, feedback, Array.from(buttonGroup.children));
+                }
+            });
+            container.appendChild(buttonGroup);
+        }
+
+        if (q.type === "fill-blank") {
+            const inputContainer = document.createElement("div");
+            const inputs = q.answer.map((_, i) => {
+                const input = document.createElement("input");
+                input.type = "text";
+                input.placeholder = `Fill blank ${i + 1}`;
+                inputContainer.appendChild(input);
+                return input;
+            });
+            const submitBtn = document.createElement("button");
+            submitBtn.className = "submit-btn";
+            submitBtn.innerText = "Submit Answer";
+            submitBtn.onclick = () => checkFillBlankAnswer(inputs, q.answer, feedback, submitBtn);
+            container.appendChild(inputContainer);
+            container.appendChild(submitBtn);
+        }
+
+        if (q.type === "output") {
+            const input = document.createElement("input");
+            input.type = "text";
+            input.placeholder = "Enter the expected output";
+            const submitBtn = document.createElement("button");
+            submitBtn.className = "submit-btn";
+            submitBtn.innerText = "Submit Answer";
+            submitBtn.onclick = () => checkOutputAnswer(input, q.answer, feedback, submitBtn);
+            container.appendChild(input);
+            container.appendChild(submitBtn);
+        }
+
+        // *** NEW: Match the Following with Dropdowns ***
+        if (q.type === "match") {
+            const matchContainer = document.createElement("div");
+            matchContainer.className = "match-container";
+            
+            const values = Object.values(q.pairs);
+            const shuffledValues = [...values].sort(() => Math.random() - 0.5);
+
+            const selects = [];
+            for (const key in q.pairs) {
+                const matchDiv = document.createElement("div");
+                matchDiv.className = "match-item";
+                
+                const keySpan = document.createElement("span");
+                keySpan.className = "match-key";
+                keySpan.textContent = key;
+                
+                const select = document.createElement("select");
+                select.style.flex = "1";
+                select.innerHTML = `<option value="">-- Select a match --</option>`;
+                shuffledValues.forEach(val => {
+                    select.innerHTML += `<option value="${val}">${val}</option>`;
+                });
+
+                matchDiv.appendChild(keySpan);
+                matchDiv.appendChild(select);
+                matchContainer.appendChild(matchDiv);
+                selects.push({ select, expected: q.pairs[key] });
+            }
+
+            const submitBtn = document.createElement("button");
+            submitBtn.className = "submit-btn";
+            submitBtn.innerText = "Submit Matches";
+            submitBtn.onclick = () => checkMatchAnswer(selects, q.pairs, feedback, submitBtn);
+            container.appendChild(matchContainer);
+            container.appendChild(submitBtn);
+        }
+
+        // *** NEW: Code Rearranging with Drag and Drop ***
+        if (q.type === "rearrange") {
+            container.innerHTML += `
+                <div class="rearrange-board">
+                    <div class="rearrange-source"></div>
+                    <div class="rearrange-target"></div>
+                </div>`;
+            
+            const sourceContainer = container.querySelector('.rearrange-source');
+            const targetContainer = container.querySelector('.rearrange-target');
+            const scrambledLines = [...q.answer].sort(() => Math.random() - 0.5);
+
+            scrambledLines.forEach((line, index) => {
+                const item = document.createElement('div');
+                item.className = 'rearrange-item';
+                item.draggable = true;
+                item.textContent = line;
+                item.id = `rearrange-item-${index}`;
+                sourceContainer.appendChild(item);
+            });
+
+            q.answer.forEach((_, index) => {
+                const dropZone = document.createElement('div');
+                dropZone.className = 'drop-zone';
+                dropZone.dataset.index = index;
+                dropZone.textContent = `Line ${index + 1}`;
+                targetContainer.appendChild(dropZone);
+            });
+
+            addDragAndDropListeners(container);
+
+            const submitBtn = document.createElement("button");
+            submitBtn.className = "submit-btn";
+            submitBtn.innerText = "Submit Code";
+            submitBtn.onclick = () => checkRearrangeAnswer(targetContainer, q.answer, feedback, submitBtn);
+            container.appendChild(submitBtn);
+        }
+
+        container.appendChild(feedback);
+    }
+    
+    function addDragAndDropListeners(container) {
+        const items = container.querySelectorAll('.rearrange-item');
+        const dropZones = container.querySelectorAll('.drop-zone');
+
+        items.forEach(item => {
+            item.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', e.target.id);
+                setTimeout(() => e.target.style.display = 'none', 0);
+            });
+            item.addEventListener('dragend', (e) => {
+                 setTimeout(() => e.target.style.display = 'block', 0);
+            });
+        });
+
+        dropZones.forEach(zone => {
+            zone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                zone.classList.add('drag-over');
+            });
+            zone.addEventListener('dragleave', () => {
+                 zone.classList.remove('drag-over');
+            });
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                zone.classList.remove('drag-over');
+                const id = e.dataTransfer.getData('text/plain');
+                const draggedItem = document.getElementById(id);
+                
+                // If zone already has an item, swap it back to source
+                if(zone.children.length > 0) {
+                    container.querySelector('.rearrange-source').appendChild(zone.firstChild);
+                }
+                zone.innerHTML = '';
+                zone.appendChild(draggedItem);
+            });
+        });
+    }
+
+
+    function showFeedback(isCorrect, feedback, correctAnswer, elementsToDisable, container) {
+        attemptCount++;
+        feedback.style.display = "block";
+        const questionIsOver = isCorrect || attemptCount >= MAX_ATTEMPTS;
+
+        if (isCorrect) {
+            const compliments = ["Perfect, Maya! 💖 You're brilliant!", "Amazing work, Maya! 🌟", "Excellent, Maya! 😍", "Outstanding, Maya! 👏", "Fantastic, Maya! ✨", "Wonderful, Maya! 🎉", "Chuppa, well done😘", "Baala, Matina 😚"];
+            feedback.textContent = `✅ ${compliments[Math.floor(Math.random() * compliments.length)]}`;
+            feedback.className = "feedback correct";
+            if (attemptCount === 1) correctAnswers++;
+        } else if (questionIsOver) {
+            feedback.textContent = `❌ The correct answer is: ${correctAnswer}. Don't worry, you'll get the next one! 💪`;
+            feedback.className = "feedback incorrect";
+        } else {
+            const encouragements = ["Almost there, Maya! ❤️ Try again!", "You're getting closer! 💪", "Don't give up, Maya! 🌈", "So close! ✨ One more try!"];
+            const attemptsLeft = MAX_ATTEMPTS - attemptCount;
+            feedback.textContent = `❌ ${encouragements[Math.floor(Math.random() * encouragements.length)]} (${attemptsLeft} attempt${attemptsLeft > 1 ? 's' : ''} left)`;
+            feedback.className = "feedback incorrect";
+        }
+
+        if (questionIsOver) {
+            if (elementsToDisable.inputs) elementsToDisable.inputs.forEach(el => el.disabled = true);
+            if (elementsToDisable.buttons) elementsToDisable.buttons.forEach(el => el.disabled = true);
+            if (elementsToDisable.dragAndDrop) {
+                container.querySelectorAll('.rearrange-item').forEach(item => item.draggable = false);
+            }
+            setTimeout(() => nextQuestion(), isCorrect ? 2000 : 3500);
+        }
+    }
+
+
+    // ... (mcq, true-false, fill-blank, output checking functions are unchanged)
+    function checkMCQAnswer(selected, correct, feedback, allButtons) {
+        if (allButtons[0].disabled) return;
+        const isCorrect = selected === correct;
+        const selectedButton = allButtons.find(btn => btn.innerText === selected);
+        if (isCorrect) {
+            selectedButton.classList.add('correct');
+        } else {
+            selectedButton.classList.add('incorrect');
+            const correctButton = allButtons.find(btn => btn.innerText === correct);
+            if (correctButton) correctButton.classList.add('correct');
+        }
+        showFeedback(isCorrect, feedback, `"${correct}"`, { buttons: allButtons });
+    }
+
+    function checkTrueFalseAnswer(selected, correct, feedback, allButtons) {
+        if (allButtons[0].disabled) return;
+        const isCorrect = (selected === "True") === correct;
+        const selectedButton = allButtons.find(btn => btn.innerText === selected);
+        if (isCorrect) {
+            selectedButton.classList.add('correct');
+        } else {
+            selectedButton.classList.add('incorrect');
+            const correctButton = allButtons.find(btn => (btn.innerText === "True") === correct);
+            if (correctButton) correctButton.classList.add('correct');
+        }
+        showFeedback(isCorrect, feedback, correct.toString(), { buttons: allButtons });
+    }
+
+    function checkFillBlankAnswer(inputs, answerArray, feedback, submitBtn) {
+        const userAnswers = inputs.map(input => input.value.trim());
+        const isCorrect = JSON.stringify(userAnswers.map(u => u.toLowerCase())) === JSON.stringify(answerArray.map(a => a.toLowerCase()));
+        showFeedback(isCorrect, feedback, `"${answerArray.join('", "')}"`, { inputs: inputs, buttons: [submitBtn] });
+    }
+
+    function checkOutputAnswer(input, correctAnswer, feedback, submitBtn) {
+        const userAnswer = input.value.trim();
+        const isCorrect = userAnswer === correctAnswer;
+        showFeedback(isCorrect, feedback, `"${correctAnswer}"`, { inputs: [input], buttons: [submitBtn] });
+    }
+    
+    // *** NEW: Check Dropdown Answers ***
+    function checkMatchAnswer(selects, pairs, feedback, submitBtn) {
+        const isCorrect = selects.every(item => item.select.value === item.expected);
+        const allSelects = selects.map(s => s.select);
+        const correctAnswersString = Object.entries(pairs).map(([key, value]) => `${key}: "${value}"`).join(', ');
+        showFeedback(isCorrect, feedback, correctAnswersString, { inputs: allSelects, buttons: [submitBtn] });
+    }
+
+    // *** NEW: Check Drag and Drop Answers ***
+    function checkRearrangeAnswer(targetContainer, answerArray, feedback, submitBtn) {
+        const userCode = [];
+        targetContainer.querySelectorAll('.drop-zone').forEach(zone => {
+            if (zone.children.length > 0) {
+                userCode.push(zone.firstChild.textContent);
+            } else {
+                userCode.push(""); // Add placeholder for empty slots
+            }
+        });
+        const isCorrect = JSON.stringify(userCode) === JSON.stringify(answerArray);
+        const correctOrderString = answerArray.map(line => `"${line}"`).join(' -> ');
+        
+        // Get the overall parent container
+        const parentContainer = targetContainer.closest(".question-container");
+
+        showFeedback(
+            isCorrect,
+            feedback,
+            correctOrderString,
+            { buttons: [submitBtn], dragAndDrop: true },
+            parentContainer
+        );
+    }
+
+
+
+    function nextQuestion() {
+        questionStates[currentType] = { currentIndex: currentIndex + 1, correctAnswers: correctAnswers };
+        currentIndex++;
+        loadNextQuestion();
+    }
+
+    function showResults(questions) {
+        const container = document.getElementById("quiz-container");
+        const score = questions.length > 0 ? ((correctAnswers / questions.length) * 100).toFixed(1) : 0;
+        let message = "";
+        if (score >= 90) message = "Outstanding performance, Maya! 🏆 You're absolutely brilliant!";
+        else if (score >= 80) message = "Excellent work, Maya! 🌟 You're doing fantastic!";
+        else if (score >= 70) message = "Great job, Maya! 💪 Keep up the good work!";
+        else message = "Good effort, Maya! 💖 Practice makes perfect!";
+        
+        container.innerHTML = `
+        <div class="score-display">
+          <h2>Quiz Complete! 🎉</h2>
+          <p>${message}</p>
+          <p><strong>Your Score: ${correctAnswers}/${questions.length} (${score}%)</strong></p>
+        </div>
+        <div style="text-align: center; margin: 2rem 0;">
+          <button class="next-btn" onclick="restartQuiz()">Try Again</button>
+          <button class="next-btn" onclick="showTypeSelector()">Choose New Type</button>
+        </div>
+      `;
+    }
+
+    function restartQuiz() {
+        if (currentType) {
+            questionStates[currentType] = { currentIndex: 0, correctAnswers: 0 };
+            startQuizType(currentType);
+        } else {
+            showTypeSelector();
+        }
+    }
+
+    window.onload = function() {
+        showTypeSelector();
+    };
+</script>
+</body>
+</html>
