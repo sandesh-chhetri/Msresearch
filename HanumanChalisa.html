@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hanuman Chalisa Pocket Book & Game</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles to enhance the pocket book look */
+        @import url('https://fonts.googleapis.com/css2?family=Tinos:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+        
+        :root {
+            /* Define a warm, paper-like palette */
+            --color-parchment: #f9f7f4;
+            --color-sepia: #4d3a2b;
+            --color-border: #a08c6b;
+        }
+
+        body {
+            background-color: var(--color-parchment);
+            font-family: 'Tinos', serif; /* Use a classic, legible serif font */
+            color: var(--color-sepia);
+            min-height: 100vh;
+        }
+
+        .pocket-book {
+            max-width: 900px;
+            background-color: white;
+            border-radius: 8px;
+            border: 2px solid var(--color-border);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25), inset 0 0 10px rgba(160, 140, 107, 0.5); /* Inner and outer shadow */
+            padding: 2rem 1.5rem;
+            margin-top: 2rem;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Subtle page line for aesthetic */
+        .pocket-book::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 1px;
+            height: 100%;
+            background-color: var(--color-border);
+            opacity: 0.5;
+            transform: translateX(1.5rem);
+        }
+
+        /* Full Text View Styling */
+        .stanza-container {
+            border-bottom: 1px dashed rgba(77, 58, 43, 0.2);
+            padding: 1rem 0;
+            margin-bottom: 0.5rem;
+        }
+        .stanza-container:last-child {
+            border-bottom: none;
+        }
+
+        /* Responsive grid for the three languages */
+        .language-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.5rem;
+        }
+
+        @media (min-width: 768px) {
+            .language-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 1.5rem;
+            }
+        }
+        
+        .sanskrit { font-size: 1.15rem; font-weight: 500; }
+        .romanized { font-style: italic; opacity: 0.9; }
+        .nepali { font-size: 1.05rem; }
+
+        .title-text {
+            text-align: center;
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            line-height: 1.2;
+            color: #b91c1c; /* Deep red for emphasis */
+            border-bottom: 3px double #b91c1c;
+            padding-bottom: 0.5rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        /* Game specific feedback colors */
+        .feedback-correct { color: #10b981; } /* Brighter Green */
+        .feedback-error { color: #ef4444; } /* Brighter Red */
+
+        /* --- MONKEYTYPE-STYLE INPUT STYLES --- */
+        
+        /* FIX: Ensure the target text wraps by word */
+        #target-text {
+            white-space: normal;
+            overflow-wrap: break-word; /* Ensures long lines wrap at the word level */
+        }
+
+        #typing-wrapper {
+            font-family: monospace; /* Monospace for perfect character alignment */
+            font-size: 1.25rem;
+            letter-spacing: 0.1em;
+            font-weight: bold;
+            line-height: 1.6;
+            padding: 1rem;
+            border: 2px solid #a08c6b;
+            border-radius: 0.5rem;
+            position: relative;
+            cursor: text;
+            background-color: #fffaf0; /* Light parchment background */
+            min-height: 58px; /* Ensure height stability */
+            
+            /* CSS FIXES: Use word-break: normal; and overflow-wrap: break-word; */
+            white-space: normal; 
+            word-break: normal; 
+            overflow-wrap: break-word;
+            
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: height 0.15s ease-out; 
+        }
+
+        /* FIXES: Apply wrapping rules to the inner display as well */
+        #typed-display {
+            white-space: normal; 
+            word-break: normal; 
+            overflow-wrap: break-word; 
+            width: 100%;
+        }
+
+        /* The actual input field is transparent but stays in front and focused */
+        #user-input {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            border: none;
+            color: transparent; /* Hide the native text */
+            caret-color: transparent; /* Hide the native caret */
+            padding: 1rem;
+            z-index: 10;
+        }
+        
+        /* Character Coloring */
+        .char.correct { 
+            color: #10b981; /* Brighter Green */
+        }
+        .char.incorrect { 
+            color: #ef4444; /* Brighter Red text */
+            background-color: #fee2e2; /* Very light red highlight */
+            border-radius: 2px; 
+            box-shadow: 0 0 1px #ef4444;
+        }
+        .char.untyped { 
+            color: var(--color-sepia); 
+            opacity: 0.6; /* Slightly less faded untyped text for better readability */
+        }
+        
+        /* The custom blinking cursor. */
+        .char.cursor { 
+            border-left: 3px solid #b91c1c; /* Thicker blinking bar */
+            background-color: #fef2f2; /* Very light red background highlight */
+            color: var(--color-sepia); 
+            animation: blink 0.8s step-end infinite; /* Slightly faster blink */
+            padding-left: 1px; /* Small push to the right for the bar to sit next to the character */
+            margin-right: -1px; /* Counteract the padding to avoid layout shift */
+        }
+
+        @keyframes blink {
+            from, to { border-color: #b91c1c; }
+            50% { border-color: transparent; } /* Blink by hiding the border */
+        }
+    </style>
+</head>
+<body class="flex justify-center">
+    <div id="app" class="pocket-book w-full max-w-4xl rounded-xl">
+        <h1 class="title-text">श्री हनुमान चालीसा (Memory & Typing Challenge)</h1>
+        <p id="game-subtitle" class="text-center text-sm mb-6 opacity-75">Memorize and reconstruct the verses using **simplified English characters** (using aa, ee, oo for long vowels). Get instant feedback on every character!</p>
+        
+        <!-- Game Interface -->
+        <div id="game-container" class="space-y-6">
+            
+            <!-- Progress, Line Selector, and Live Stats Bar -->
+            <div class="flex flex-col space-y-2">
+                <!-- Progress and Line Selector -->
+                <div class="flex flex-col sm:flex-row justify-between items-center text-red-700 pb-2 border-b border-amber-300">
+                    <div id="progress-display" class="bg-red-100 px-3 py-1 rounded-full shadow-inner text-sm mb-2 sm:mb-0">Line 0 / 83</div>
+                    <!-- Line Selector Dropdown -->
+                    <select id="line-selector" class="px-3 py-1 border border-red-300 rounded-lg text-sm bg-white shadow-md cursor-pointer hover:border-red-500 transition duration-150 w-full sm:w-auto">
+                        <!-- Options will be populated by JS -->
+                    </select>
+                </div>
+                <!-- New Stats Bar (Hidden initially) -->
+                <div id="stats-bar" class="flex justify-between items-center bg-gray-100 p-3 rounded-lg text-sm font-semibold shadow-md hidden">
+                    <div class="flex flex-col items-center flex-1">
+                        <span class="text-xs text-gray-500">WPM</span>
+                        <span id="wpm-display" class="text-xl text-green-700 font-extrabold">0</span>
+                    </div>
+                    <div class="flex flex-col items-center flex-1 border-x border-gray-300 mx-2 px-2">
+                        <span class="text-xs text-gray-500">Accuracy</span>
+                        <span id="accuracy-display" class="text-xl text-amber-700 font-extrabold">0%</span>
+                    </div>
+                    <div class="flex flex-col items-center flex-1">
+                        <span class="text-xs text-gray-500">Score</span>
+                        <span id="score-display" class="text-xl text-red-700 font-extrabold">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Start Button / Completion Message -->
+            <div id="start-screen" class="text-center pt-4">
+                <p class="mb-6 text-lg">Click the button to begin the challenge and test your knowledge of the sacred text. Use the **Line Selector** above to jump to any stanza.</p>
+                <button id="start-button" class="px-8 py-3 bg-red-700 text-white font-bold rounded-full shadow-xl transition duration-200 transform hover:scale-105 active:scale-100 hover:bg-red-800 focus:outline-none">
+                    Start Learning Challenge
+                </button>
+            </div>
+
+            <!-- Challenge Area (Hidden initially) -->
+            <div id="challenge-area" class="hidden space-y-6 pt-4 border-t border-dashed border-red-300">
+                
+                <h3 class="text-lg font-bold text-center text-red-700" id="line-type-header">Invocation (दोहा)</h3>
+
+                <!-- The line to be typed (Romanized) -->
+                <div class="p-4 bg-amber-50 rounded-xl shadow-inner border border-amber-200">
+                    <p class="text-xl font-bold text-center italic text-amber-900" id="target-text">Loading...</p>
+                </div>
+                
+                <!-- Hints (Sanskrit and Nepali) -->
+                <div class="flex flex-col md:flex-row md:space-x-4">
+                    <div class="w-full md:w-1/2 p-3 bg-gray-50 rounded-lg text-sm mb-3 md:mb-0 border">
+                        <span class="font-bold text-red-700">Sanskrit Hint:</span> <span id="sanskrit-hint" class="sanskrit">...</span>
+                    </div>
+                    <div class="w-full md:w-1/2 p-3 bg-gray-50 rounded-lg text-sm border">
+                        <span class="font-bold text-red-700">Nepali Hint:</span> <span id="nepali-hint" class="nepali">...</span>
+                    </div>
+                </div>
+
+                <!-- Typing Display Area -->
+                <div id="typing-wrapper" class="w-full p-3 focus-within:border-red-600 focus-within:ring-red-600 focus-within:ring-1 transition-all duration-150" tabindex="0">
+                    <div id="typed-display" class="w-full">
+                        <!-- Colored text rendering will go here -->
+                    </div>
+                    <!-- Hidden input field to capture actual text and manage focus/cursor -->
+                    <!-- Added spellcheck=false and autocorrect=off to eliminate the "curly underline" -->
+                    <input type="text" id="user-input" class="p-0 m-0" disabled autocomplete="off" spellcheck="false" autocorrect="off">
+                </div>
+                
+                <!-- Feedback Message -->
+                <p id="feedback-message" class="text-center font-bold h-6"></p>
+                
+                <!-- Skip/Next Button -->
+                <div class="flex justify-center">
+                    <button id="next-button" class="px-6 py-2 bg-green-700 text-white font-bold rounded-lg shadow-md hover:bg-green-800 transition duration-150" disabled>
+                        Next Line (or press Enter)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Full Text View Toggle (For reference) -->
+            <div class="text-center pt-4 border-t border-amber-700/50">
+                <button id="toggle-full-text" class="text-red-700 text-sm hover:underline">
+                    View Full Chalisa Text
+                </button>
+            </div>
+            
+            <div id="full-text-display" class="hidden mt-4">
+                <!-- Full Chalisa will be rendered here if toggled -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data for the complete Hanuman Chalisa (Doha, Chaupai, and Closing Doha)
+        // NOTE: Romanized transliteration has been corrected for phonetic accuracy using 
+        // simplified ASCII: (aa, ee, oo for long vowels, sh for 'श', ch for 'च', etc.)
+        const chalisaData = [
+            // Invocation (Dohas)
+            { type: 'invocation', sanskrit: 'श्रीगुरु चरन सरोज रज, निज मनु मुकुर सुधारि। बरनउँ रघुबर बिमल जसु, जो दायकु फल चारि॥', romanized: 'Shri Guru charan saroj raj, nij manu mukur sudhari. Baranau Raghuvar vimal jasu, jo daayaku phal chaari.', nepali: 'श्रीगुरु चरण सरोज रज, निज मन मुकुर सुधारि। बरनउँ रघुवर विमल जसु, जो दायक फल चारि॥' },
+            { type: 'invocation', sanskrit: 'बुद्धिहीन तनु जानिके, सुमिरौं पवनकुमार। बल बुधि विद्या देहु मोहिं, हरहु कलेस बिकार॥', romanized: 'Buddhiheen tanu jaanike, sumirau pavan kumaar. Bal budhi vidya dehu mohi, harahu kales vikaar.', nepali: 'बुद्धिहीन तनु जानिके, सुमिरौं पवनकुमार। बल बुद्धि विद्या देहु मोहि, हरहु कलेश विकार॥' },
+
+            // Chaupai Stanzas (1-40, 80 lines)
+            { type: 'chaupai', sanskrit: 'जय हनुमान ज्ञान गुन सागर।', romanized: 'Jai Hanuman gyaan gun saagar.', nepali: 'जय हनुमान ज्ञान गुण सागर।' },
+            { type: 'chaupai', sanskrit: 'जय कपीस तिहुँ लोक उजागर॥', romanized: 'Jai Kapeesh tihun lok ujaagar.', nepali: 'जय कपीश तिहुँ लोक उजागर॥' },
+            { type: 'chaupai', sanskrit: 'राम दूत अतुलित बल धामा।', romanized: 'Raam doot atulit bal dhaamaa.', nepali: 'राम दूत अतुलित बल धामा।' },
+            { type: 'chaupai', sanskrit: 'अञ्जनि पुत्र पवनसुत नामा॥', romanized: 'Anjani putra pawansut naamaa.', nepali: 'अञ्जनि पुत्र पवनसुत नामा॥' },
+            { type: 'chaupai', sanskrit: 'महावीर विक्रम बजरङ्गी।', romanized: 'Mahaavir vikram Bajrangi.', nepali: 'महावीर विक्रम बजरङ्गी।' },
+            { type: 'chaupai', sanskrit: 'कुमति निवार सुमति के सङ्गी॥', romanized: 'Kumati nivaar sumati ke sangi.', nepali: 'कुमति निवार सुमति के सङ्गी॥' },
+            { type: 'chaupai', sanskrit: 'कञ्चन बरन बिराज सुबेसा।', romanized: 'Kanchan baran viraaj subesaa.', nepali: 'कञ्चन वरण विराज सुवेशा।' },
+            { type: 'chaupai', sanskrit: 'कानन कुण्डल कुञ्चित केसा॥', romanized: 'Kaanan kundal kunchit kesaa.', nepali: 'कानन कुण्डल कुञ्चित केशा॥' },
+            { type: 'chaupai', sanskrit: 'हाथ बज्र औ ध्वजा बिराजै।', romanized: 'Haath vajra au dhwaj biraaje.', nepali: 'हाथ वज्र औ ध्वजा विराजै।' },
+            { type: 'chaupai', sanskrit: 'काँधे मूँज जनेऊ साजै॥', romanized: 'Kaandhe moonj janeu saaje.', nepali: 'काँधे मूँज जनेऊ साजै॥' },
+            { type: 'chaupai', sanskrit: 'शंकर सुवन केसरी नन्दन।', romanized: 'Shankar suvan Kesari Nandan.', nepali: 'शङ्कर सुवन केसरी नन्दन।' },
+            { type: 'chaupai', sanskrit: 'तेज प्रताप महा जग वन्दन॥', romanized: 'Tej prataap maha jag vandan.', nepali: 'तेज प्रताप महा जग वन्दन॥' },
+            { type: 'chaupai', sanskrit: 'विद्यावान गुणी अति चातुर।', romanized: 'Vidyaavaan guni ati chatur.', nepali: 'विद्यावान गुणी अति चातुर।' },
+            { type: 'chaupai', sanskrit: 'राम काज करिबे को आतुर॥', romanized: 'Raam kaaj karibe ko aatur.', nepali: 'राम काज करिबे को आतुर॥' },
+            { type: 'chaupai', sanskrit: 'प्रभु चरित्र सुनिबे को रसिया।', romanized: 'Prabhu charitra sunibe ko rasiyaa.', nepali: 'प्रभु चरित्र सुनिबे को रसिया।' },
+            { type: 'chaupai', sanskrit: 'राम लखन सीता मन बसिया॥', romanized: 'Raam Lakhan Sita man basiyaa.', nepali: 'राम लखन सीता मन बसिया॥' },
+            { type: 'chaupai', sanskrit: 'सूक्ष्म रूप धरि सियहिं दिखावा।', romanized: 'Sookshma roop dhari siyahin dikhaavaa.', nepali: 'सूक्ष्म रूप धरि सियहिं दिखावा।' },
+            { type: 'chaupai', sanskrit: 'विकट रूप धरि लङ्क जरावा॥', romanized: 'Vikat roop dhari Lanka jaraavaa.', nepali: 'विकट रूप धरि लङ्क जरावा॥' },
+            { type: 'chaupai', sanskrit: 'भीम रूप धरि असुर सँहारे।', romanized: 'Bheem roop dhari asur sanhaare.', nepali: 'भीम रूप धरि असुर संहारे।' },
+            { type: 'chaupai', sanskrit: 'रामचन्द्र के काज सँवारे॥', romanized: 'Raamchandra ke kaaj sanvaare.', nepali: 'रामचन्द्र के काज सँवारे॥' },
+            { type: 'chaupai', sanskrit: 'लाय सञ्जीवन लखन जियाए।', romanized: 'Laaye Sanjeevan Lakhan jiyaaye.', nepali: 'लाय सञ्जीवन लखन जियाए।' },
+            { type: 'chaupai', sanskrit: 'श्री रघुबीर हरषि उर लाए॥', romanized: 'Shri Raghuveer harashi ur laaye.', nepali: 'श्री रघुवीर हरषि उर लाए॥' },
+            { type: 'chaupai', sanskrit: 'रघुपति कीन्ही बहुत बड़ाई।', romanized: 'Raghupati keenhi bahut badaayi.', nepali: 'रघुपति कीन्ही बहुत बडाई।' },
+            { type: 'chaupai', sanskrit: 'तुम मम प्रिय भरतहि सम भाई॥', romanized: 'Tum mam priya Bharatahi sam bhaayi.', nepali: 'तुम मम प्रिय भरतहि सम भाई॥' },
+            { type: 'chaupai', sanskrit: 'सहस बदन तुम्हरो जस गावैं।', romanized: 'Sahas badan tumharo jas gaawain.', nepali: 'सहस बदन तुम्हरो जस गावैं।' },
+            { type: 'chaupai', sanskrit: 'अस कहि श्रीपति कण्ठ लगावैं॥', romanized: 'As kahi Shriipati kanth lagaawain.', nepali: 'अस कहि श्रीपति कण्ठ लगावैं॥' },
+            { type: 'chaupai', sanskrit: 'सनकादिक ब्रह्मादि मुनीसा।', romanized: 'Sanakaadik Brahmaadi Munisaa.', nepali: 'सनकादिक ब्रह्मादि मुनीसा।' },
+            { type: 'chaupai', sanskrit: 'नारद सारद सहित अहीसा॥', romanized: 'Naarad Saarad sahit Aheesha.', nepali: 'नारद सारद सहित अहीसा॥' },
+            { type: 'chaupai', sanskrit: 'जम कुबेर दिगपाल जहाँ ते।', romanized: 'Jam Kuber digpaal jahaan te.', nepali: 'जम कुबेर दिगपाल जहाँ ते।' },
+            { type: 'chaupai', sanskrit: 'कवि कोविद कहि सके कहाँ ते॥', romanized: 'Kavi kovid kahi sake kahaan te.', nepali: 'कवि कोविद कहि सके कहाँ ते॥' },
+            { type: 'chaupai', sanskrit: 'तुम उपकार सुग्रीवहिं कीन्हा।', romanized: 'Tum upkaar Sugreevahim keenhaa.', nepali: 'तुम उपकार सुग्रीवहिं कीन्हा।' },
+            { type: 'chaupai', sanskrit: 'राम मिलाय राज पद दीन्हा॥', romanized: 'Raam milaaye raaj pad deenhaa.', nepali: 'राम मिलाय राज पद दीन्हा॥' },
+            { type: 'chaupai', sanskrit: 'तुम्हरो मन्त्र विभीषण माना।', romanized: 'Tumharo mantra Vibheeshan maanaa.', nepali: 'तुम्हरो मन्त्र विभीषण माना।' },
+            { type: 'chaupai', sanskrit: 'लङ्केश्वर भए सब जग जाना॥', romanized: 'Lankeshwar bhaye sab jag jaanaa.', nepali: 'लङ्केश्वर भए सब जग जाना॥' },
+            { type: 'chaupai', sanskrit: 'जुग सहस्र जोजन पर भानु।', romanized: 'Jug sahasra yojan par bhaanu.', nepali: 'जुग सहस्त्र जोजन पर भानु।' },
+            { type: 'chaupai', sanskrit: 'लील्यो ताहि मधुर फल जानु॥', romanized: 'Leelyo taahi madhur phal jaanu.', nepali: 'लील्यो ताहि मधुर फल जानु॥' },
+            { type: 'chaupai', sanskrit: 'प्रभु मुद्रिका मेलि मुख माहीं।', romanized: 'Prabhu mudrika meli mukh maahin.', nepali: 'प्रभु मुद्रिका मेलि मुख माहीं।' },
+            { type: 'chaupai', sanskrit: 'जलधि लाँघि गये अचरज नाहीं॥', romanized: 'Jaladhi laanghi gaye acharaj naahin.', nepali: 'जलधि लाँघि गये अचरज नाहीं॥' },
+            { type: 'chaupai', sanskrit: 'दुर्गम काज जगत के जेते।', romanized: 'Durgam kaaj jagat ke jete.', nepali: 'दुर्गम काज जगत के जेते।' },
+            { type: 'chaupai', sanskrit: 'सुगम अनुग्रह तुम्हरे तेते॥', romanized: 'Sugam anugrah tumhare tete.', nepali: 'सुगम अनुग्रह तुम्हरे तेते॥' },
+            { type: 'chaupai', sanskrit: 'राम दुआरे तुम रखवारे।', romanized: 'Raam duare tum rakhwaare.', nepali: 'राम दुआरे तुम रखवारे।' },
+            { type: 'chaupai', sanskrit: 'होत न आज्ञा बिनु पैसारे॥', romanized: 'Hot na aagyaa binu paisaare.', nepali: 'होत न आज्ञा बिनु पैसारे॥' },
+            { type: 'chaupai', sanskrit: 'सब सुख लहै तुम्हारी सरना।', romanized: 'Sab sukh lahai tumhaari sarnaa.', nepali: 'सब सुख लहै तुम्हारी सरना।' },
+            { type: 'chaupai', sanskrit: 'तुम रक्षक काहू को डर ना॥', romanized: 'Tum rakshak kaahu ko dar naa.', nepali: 'तुम रक्षक काहू को डर ना॥' },
+            { type: 'chaupai', sanskrit: 'आपन तेज सम्हारो आपै।', romanized: 'Aapan tej sanhaaro aapai.', nepali: 'आपन तेज सम्हारो आपै।' },
+            { type: 'chaupai', sanskrit: 'तीनों लोक हाँक तें काँपै॥', romanized: 'Teeno lok haank ten kaanpai.', nepali: 'तीनों लोक हाँक तें काँपै॥' },
+            { type: 'chaupai', sanskrit: 'भूत पिशाच निकट नहिं आवै।', romanized: 'Bhoot pishaach nikat nahin aawai.', nepali: 'भूत पिशाच निकट नहिं आवै।' },
+            { type: 'chaupai', sanskrit: 'महावीर जब नाम सुनावै॥', romanized: 'Mahaavir jab naam sunaawai.', nepali: 'महावीर जब नाम सुनावै॥' },
+            { type: 'chaupai', sanskrit: 'नासै रोग हरै सब पीरा।', romanized: 'Naasai rog harai sab peeraa.', nepali: 'नासै रोग हरै सब पीरा।' },
+            { type: 'chaupai', sanskrit: 'जपत निरन्तर हनुमत बीरा॥', romanized: 'Japat nirantar Hanumat beeraa.', nepali: 'जपत निरन्तर हनुमत बीरा॥' },
+            { type: 'chaupai', sanskrit: 'संकट तें हनुमान छुड़ावै।', romanized: 'Sankat ten Hanuman chhudaawai.', nepali: 'सङ्कट तें हनुमान छुड़ावै।' },
+            { type: 'chaupai', sanskrit: 'मन क्रम वचन ध्यान जो लावै॥', romanized: 'Man kram vachan dhyaan jo laawai.', nepali: 'मन क्रम वचन ध्यान जो लावै॥' },
+            { type: 'chaupai', sanskrit: 'सब पर राम तपस्वी राजा।', romanized: 'Sab par Raam tapasvee raajaa.', nepali: 'सब पर राम तपस्वी राजा.' },
+            { type: 'chaupai', sanskrit: 'तिन के काज सकल तुम साजा॥', romanized: 'Tin ke kaaj sakal tum saajaa.', nepali: 'तिन के काज सकल तुम साजा॥' },
+            { type: 'chaupai', sanskrit: 'और मनोरथ जो कोई लावै।', romanized: 'Aur manorath jo koi laawai.', nepali: 'और मनोरथ जो कोई लावै।' },
+            { type: 'chaupai', sanskrit: 'सोइ अमित जीवन फल पावै॥', romanized: 'Soi amit jeevan phal paawai.', nepali: 'सोइ अमित जीवन फल पावै॥' },
+            { type: 'chaupai', sanskrit: 'चारों जुग परताप तुम्हारा।', romanized: 'Chaaro jug partaap tumhaaraa.', nepali: 'चारों जुग परताप तुम्हारा।' },
+            { type: 'chaupai', sanskrit: 'है परसिद्ध जगत उजियारा॥', romanized: 'Hai parasiddh jagat ujiyaaraa.', nepali: 'है परसिद्ध जगत उजियारा॥' },
+            { type: 'chaupai', sanskrit: 'साधु सन्त के तुम रखवारे।', romanized: 'Saadhu sant ke tum rakhwaare.', nepali: 'साधु सन्त के तुम रखवारे।' },
+            { type: 'chaupai', sanskrit: 'असुर निकन्दन राम दुलारे॥', romanized: 'Asur nikandan Raam dulaare.', nepali: 'असुर निकन्दन राम दुलारे॥' },
+            { type: 'chaupai', sanskrit: 'अष्ट सिद्धि नौ निधि के दाता।', romanized: 'Asht siddhi nau nidhi ke daataa.', nepali: 'अष्ट सिद्धि नौ निधि के दाता।' },
+            { type: 'chaupai', sanskrit: 'अस बर दीन जानकी माता॥', romanized: 'As var deen Jaanakee maataa.', nepali: 'अस वर दीन जानकी माता॥' },
+            { type: 'chaupai', sanskrit: 'राम रसायन तुम्हरे पासा।', romanized: 'Raam rasaayan tumhare paasaa.', nepali: 'राम रसायन तुम्हरे पासा।' },
+            { type: 'chaupai', sanskrit: 'सदा रहो रघुपति के दासा॥', romanized: 'Sadaa raho Raghupati ke daasaa.', nepali: 'सदा रहो रघुपति के दासा॥' },
+            { type: 'chaupai', sanskrit: 'तुम्हरे भजन राम को पावै।', romanized: 'Tumhare bhajan Raam ko paawai.', nepali: 'तुम्हरे भजन राम को पावै।' },
+            { type: 'chaupai', sanskrit: 'जनम जनम के दुख बिसरावै॥', romanized: 'Janam janam ke dukh bisraawai.', nepali: 'जनम जनम के दुख बिसरावै॥' },
+            { type: 'chaupai', sanskrit: 'अन्त काल रघुबर पुर जाई।', romanized: 'Ant kaal Raghubar pur jaayi.', nepali: 'अन्त काल रघुबर पुर जाई।' },
+            { type: 'chaupai', sanskrit: 'जहाँ जन्म हरि भक्त कहाई॥', romanized: 'Jahaan janma Hari bhakt kahaayi.', nepali: 'जहाँ जन्म हरि भक्त कहाई॥' },
+            { type: 'chaupai', sanskrit: 'और देवता चित्त न धरई।', romanized: 'Aur devataa chitt na dharai.', nepali: 'और देवता चित्त न धरई।' },
+            { type: 'chaupai', sanskrit: 'हनुमत सेइ सर्व सुख करई॥', romanized: 'Hanumat sei sarv sukh karai.', nepali: 'हनुमत सेइ सर्व सुख करई॥' },
+            { type: 'chaupai', sanskrit: 'संकट कटै मिटै सब पीरा।', romanized: 'Sankat katai mitai sab peeraa.', nepali: 'संकट कटै मिटै सब पीरा।' },
+            { type: 'chaupai', sanskrit: 'जो सुमिरै हनुमत बलबीरा॥', romanized: 'Jo sumirai Hanumat balbeeraa.', nepali: 'जो सुमिरै हनुमत बलबीरा॥' },
+            { type: 'chaupai', sanskrit: 'जय जय जय हनुमान गोसाईं।', romanized: 'Jai jai jai Hanuman Gosain.', nepali: 'जय जय जय हनुमान गोसाईं।' },
+            { type: 'chaupai', sanskrit: 'कृपा करहु गुरुदेव की नाईं॥', romanized: 'Kripaa karahu Gurudev ki naain.', nepali: 'कृपा करहु गुरुदेव की नाईं॥' },
+            { type: 'chaupai', sanskrit: 'जो सत बार पाठ कर कोई।', romanized: 'Jo sat baar paath kar koi.', nepali: 'जो सत बार पाठ कर कोई।' },
+            { type: 'chaupai', sanskrit: 'छूटहि बन्दि महा सुख होई॥', romanized: 'Chhootahi bandi mahaa sukh hoi.', nepali: 'छूटहि बन्दि महा सुख होई॥' },
+            { type: 'chaupai', sanskrit: 'जो यह पढ़ै हनुमान चालीसा।', romanized: 'Jo yah padhai Hanuman Chaaleesaa.', nepali: 'जो यह पढ़ै हनुमान चालीसा।' },
+            { type: 'chaupai', sanskrit: 'होय सिद्धि साखी गौरीसा॥', romanized: 'Hoy siddhi saakhi Gaureesaa.', nepali: 'होय सिद्धि साखी गौरीसा॥' },
+            { type: 'chaupai', sanskrit: 'तुलसीदास सदा हरि चेरा।', romanized: 'Tulaseedaas sadaa Hari cheraa.', nepali: 'तुलसीदास सदा हरि चेरा।' },
+            { type: 'chaupai', sanskrit: 'कीजै नाथ हृदय महँ डेरा॥', romanized: 'Keejai naath hriday mah deraa.', nepali: 'कीजै नाथ हृदय महँ डेरा॥' },
+
+            // Closing Doha
+            { type: 'doha', sanskrit: 'पवन तनय सङ्कट हरन, मंगल मूरति रूप। राम लखन सीता सहित, हृदय बसहु सुर भूप॥', romanized: 'Pavan tanay sankat haran, mangal moorati roop. Raam Lakhan Sita sahit, hriday basahu sur bhoop.', nepali: 'पवन तनय संकट हरण, मङ्गल मूरति रूप। राम लखन सीता सहित, हृदय बसहु सुर भूप॥' }
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // DOM Elements
+            const startScreen = document.getElementById('start-screen');
+            const startButton = document.getElementById('start-button');
+            const challengeArea = document.getElementById('challenge-area');
+            const targetTextElement = document.getElementById('target-text');
+            const sanskritHintElement = document.getElementById('sanskrit-hint');
+            const nepaliHintElement = document.getElementById('nepali-hint');
+            const userInput = document.getElementById('user-input'); // The actual text input
+            const typedDisplay = document.getElementById('typed-display'); // The visual display
+            const typingWrapper = document.getElementById('typing-wrapper'); // Wrapper for focus
+            const feedbackMessage = document.getElementById('feedback-message');
+            const nextButton = document.getElementById('next-button');
+            const progressDisplay = document.getElementById('progress-display');
+            
+            const statsBar = document.getElementById('stats-bar');
+            const wpmDisplay = document.getElementById('wpm-display');
+            const accuracyDisplay = document.getElementById('accuracy-display');
+            const scoreDisplay = document.getElementById('score-display');
+            
+            // New Selector Element
+            const lineSelector = document.getElementById('line-selector');
+
+            const lineTypeHeader = document.getElementById('line-type-header');
+            
+            const toggleFullTextButton = document.getElementById('toggle-full-text');
+            const fullTextDisplay = document.getElementById('full-text-display');
+            
+            // Game State
+            let currentLineIndex = 0;
+            let rawScore = 0; 
+            const totalLines = chalisaData.length; // Corrected total lines (83 elements)
+
+            // New Stats State
+            let startTime = null;
+            let totalTypedCharacters = 0;
+            let totalErrors = 0;
+
+            // --- Helper Functions for Line Selection ---
+
+            /**
+             * Generates a descriptive label for the line selector option.
+             */
+            function getLineLabel(index) {
+                if (index === 0) return 'Invocation - Line 1 (Doha)';
+                if (index === 1) return 'Invocation - Line 2 (Doha)';
+
+                if (index >= 2 && index <= 81) {
+                    // Chaupai lines (Indices 2 through 81)
+                    const chaupaiIndex = index - 2;
+                    const stanzaNumber = Math.floor(chaupaiIndex / 2) + 1;
+                    const lineInStanza = (chaupaiIndex % 2) + 1;
+                    return `Chaupai ${stanzaNumber} - Line ${lineInStanza}`;
+                }
+
+                if (index === 82) return 'Closing Doha';
+                
+                return `Line ${index + 1}`;
+            }
+
+            /**
+             * Populates the line selection dropdown.
+             */
+            function populateLineSelector() {
+                lineSelector.innerHTML = '';
+                for (let i = 0; i < totalLines; i++) {
+                    const option = document.createElement('option');
+                    option.value = i;
+                    option.textContent = getLineLabel(i);
+                    lineSelector.appendChild(option);
+                }
+            }
+
+            /**
+             * Jumps the game state to the selected line index from the dropdown.
+             */
+            function jumpToLine(event) {
+                const newIndex = parseInt(event.target.value, 10);
+                
+                // Reset input
+                userInput.value = '';
+                
+                // Update the current line index
+                currentLineIndex = newIndex;
+                
+                // If the challenge is active, render the new line and reset session stats
+                if (!challengeArea.classList.contains('hidden')) {
+                    renderCurrentLine();
+                    
+                    // Reset session stats (WPM, Accuracy) since the user intentionally jumped.
+                    startTime = Date.now();
+                    totalTypedCharacters = 0;
+                    totalErrors = 0;
+                    rawScore = 0;
+                    wpmDisplay.textContent = '0';
+                    accuracyDisplay.textContent = '100%';
+                    scoreDisplay.textContent = '0';
+                }
+            }
+
+            // --- Core Game Functions ---
+
+            /**
+             * Renders the current line for the user to type.
+             */
+            function renderCurrentLine() {
+                if (currentLineIndex >= totalLines) {
+                    finishGame();
+                    return;
+                }
+
+                const line = chalisaData[currentLineIndex];
+                
+                // Update UI elements
+                targetTextElement.textContent = line.romanized;
+                sanskritHintElement.textContent = line.sanskrit;
+                nepaliHintElement.textContent = line.nepali;
+
+                // Update line type header
+                let typeText = getLineLabel(currentLineIndex);
+                lineTypeHeader.textContent = typeText;
+
+                // Reset input, display, and focus
+                userInput.value = '';
+                // Keep input enabled
+                userInput.disabled = false; 
+                typingWrapper.focus(); // Set focus to the visual area
+                userInput.focus(); // Set focus to the hidden input
+                checkInput(); // Render initial untyped text
+
+                feedbackMessage.textContent = '';
+                feedbackMessage.className = 'text-center font-bold h-6';
+                nextButton.disabled = true;
+
+                // Update progress and selector
+                progressDisplay.textContent = `Line ${currentLineIndex + 1} / ${totalLines}`;
+                lineSelector.value = currentLineIndex; // Keep selector synced
+                scoreDisplay.textContent = rawScore;
+            }
+
+            /**
+             * Calculates WPM (Words Per Minute) based on time elapsed and characters typed.
+             */
+            function calculateWPM() {
+                if (!startTime) return 0;
+                const elapsedTimeSeconds = (Date.now() - startTime) / 1000;
+                if (elapsedTimeSeconds === 0) return 0;
+                
+                // Calculate gross characters typed so far (current line + finished lines)
+                const grossTypedChars = userInput.value.length + totalTypedCharacters;
+                
+                const minutes = elapsedTimeSeconds / 60;
+                // Standard word length is 5 characters
+                return Math.round((grossTypedChars / 5) / minutes);
+            }
+
+            /**
+             * Calculates Accuracy based on total correct vs total typed characters.
+             */
+            function calculateAccuracy(inputLength, errors) {
+                if (inputLength === 0) return 100;
+                const correctChars = inputLength - errors;
+                return Math.max(0, Math.round((correctChars / inputLength) * 100)); // Ensure it doesn't go below 0%
+            }
+
+
+            /**
+             * Generates the color-coded HTML display based on user input.
+             */
+            function checkInput() {
+                const target = chalisaData[currentLineIndex].romanized;
+                const input = userInput.value;
+                let displayHtml = '';
+                let errorFound = false;
+                let fullMatch = true;
+                let lineErrors = 0; // Errors specific to the current line input
+                
+                // 1. Iterate through the target text character by character
+                for (let i = 0; i < target.length; i++) {
+                    const targetChar = target[i];
+                    const inputChar = input[i];
+                    let charClass = 'untyped';
+
+                    if (i < input.length) {
+                        // User has typed this character
+                        if (inputChar === targetChar) {
+                            charClass = 'correct';
+                        } else {
+                            charClass = 'incorrect';
+                            errorFound = true;
+                            lineErrors++; // Count error
+                            fullMatch = false;
+                        }
+                    } else {
+                        // Character is yet to be typed
+                        if (i === input.length && !errorFound) {
+                            charClass = 'cursor'; // Apply cursor style to the next character
+                        } else {
+                            fullMatch = false;
+                        }
+                    }
+                    
+                    // Render the character inside a span with the determined class
+                    const charToDisplay = targetChar === ' ' ? ' ' : targetChar; 
+                    displayHtml += `<span class="char ${charClass}">${charToDisplay}</span>`;
+                }
+                
+                // 2. Handle trailing incorrect characters (if user types too much)
+                if (input.length > target.length) {
+                    errorFound = true;
+                    fullMatch = false;
+                    for (let i = target.length; i < input.length; i++) {
+                        const inputChar = input[i];
+                        lineErrors++; // Count error for extra characters
+                        displayHtml += `<span class="char incorrect">${inputChar}</span>`;
+                    }
+                }
+                
+                // 3. Update the visual display
+                typedDisplay.innerHTML = displayHtml;
+                
+                // 4. Update the Stats Bar in real-time
+                const currentTotalTyped = input.length + totalTypedCharacters;
+                const currentTotalErrors = lineErrors + totalErrors;
+
+                const currentWPM = calculateWPM();
+                const currentAccuracy = calculateAccuracy(currentTotalTyped, currentTotalErrors);
+
+                wpmDisplay.textContent = currentWPM;
+                accuracyDisplay.textContent = `${currentAccuracy}%`;
+
+                
+                // 5. Update the feedback message and game state
+                if (fullMatch && input.length === target.length && !errorFound) {
+                    // Success!
+                    rawScore += 10;
+                    totalTypedCharacters += input.length; // Finalize characters for this line
+                    totalErrors += lineErrors; // Finalize errors for this line (should be 0 here, but for safety)
+
+                    feedbackMessage.textContent = '✅ Correct! Press Enter or Next to continue.';
+                    feedbackMessage.classList.add('feedback-correct');
+                    feedbackMessage.classList.remove('feedback-error');
+                    
+                    // Keep input ENABLED so it can capture the Enter keypress.
+                    nextButton.disabled = false;
+                } else if (errorFound) {
+                    // Typing error
+                    feedbackMessage.textContent = '❌ Mistake! Check the highlighted character(s).';
+                    feedbackMessage.classList.add('feedback-error');
+                    feedbackMessage.classList.remove('feedback-correct');
+                    nextButton.disabled = true;
+                } else {
+                    // Typing in progress
+                    feedbackMessage.textContent = 'Typing...';
+                    feedbackMessage.className = 'text-center font-bold h-6';
+                    nextButton.disabled = true;
+                }
+                
+                scoreDisplay.textContent = rawScore; // Update the simple score
+                
+                // Ensure the input field remains focused for seamless typing
+                userInput.focus();
+            }
+            
+            /**
+             * Moves to the next line of the challenge.
+             */
+            function nextLine() {
+                currentLineIndex++;
+                renderCurrentLine();
+            }
+
+            /**
+             * Starts the game, hiding the welcome screen.
+             */
+            function startGame() {
+                startScreen.classList.add('hidden');
+                challengeArea.classList.remove('hidden');
+                statsBar.classList.remove('hidden'); // Show stats bar
+
+                // Set currentLineIndex based on the selector value when starting
+                currentLineIndex = parseInt(lineSelector.value, 10); 
+                
+                // Reset stats for a new game
+                startTime = Date.now();
+                totalTypedCharacters = 0;
+                totalErrors = 0;
+                rawScore = 0;
+
+                // Reset WPM/Accuracy displays to 0 initially
+                wpmDisplay.textContent = '0';
+                accuracyDisplay.textContent = '100%';
+                
+                renderCurrentLine();
+            }
+
+            /**
+             * Ends the game and displays the final score.
+             */
+            function finishGame() {
+                challengeArea.classList.add('hidden');
+                statsBar.classList.add('hidden'); // Hide stats bar
+                
+                const finalWPM = calculateWPM();
+                const finalAccuracy = calculateAccuracy(totalTypedCharacters, totalErrors);
+
+                startScreen.classList.remove('hidden');
+                startScreen.innerHTML = `
+                    <h2 class="text-3xl font-bold text-red-700 mb-4">Challenge Complete! 🙏</h2>
+                    <p class="text-xl mb-4">You have successfully typed the entire Hanuman Chalisa!</p>
+                    <div class="flex flex-col space-y-2 mt-8 mb-8">
+                        <p class="text-2xl font-extrabold text-green-700">Final WPM: ${finalWPM}</p>
+                        <p class="text-xl font-bold text-amber-700">Final Accuracy: ${finalAccuracy}%</p>
+                        <p class="text-lg font-semibold text-red-700">Total Score: ${rawScore}</p>
+                    </div>
+                    <p class="text-sm mt-6 mb-4 opacity-75">Your dedication is admirable. Click below to start over.</p>
+                    <button id="restart-button" class="px-8 py-3 bg-red-700 text-white font-bold rounded-full shadow-xl transition duration-200 transform hover:scale-105 active:scale-100 focus:outline-none">
+                        Restart Challenge
+                    </button>
+                `;
+                document.getElementById('restart-button').addEventListener('click', () => {
+                    currentLineIndex = 0;
+                    rawScore = 0;
+                    totalTypedCharacters = 0;
+                    totalErrors = 0;
+                    
+                    // Re-initialize start screen and start the game
+                    startScreen.innerHTML = originalStartScreenHTML;
+                    // Need to re-attach the listener to the newly created button
+                    document.getElementById('start-button').addEventListener('click', startGame); 
+                    
+                    // Call populate to ensure selector is loaded again if needed, and reset value
+                    populateLineSelector();
+                    lineSelector.value = 0;
+                    
+                    // Ensure the initial progress text reflects the starting state
+                    progressDisplay.textContent = `Line 0 / ${totalLines}`; 
+                });
+            }
+
+            // --- Full Text View Functions ---
+
+            function renderFullChalisa() {
+                const linesHtml = [];
+                let stanzaCounter = 0;
+                
+                linesHtml.push(`
+                    <div class="language-grid font-bold text-center border-b-2 border-amber-700/50 pb-2 mb-4 hidden md:grid text-lg">
+                        <div class="text-red-700">Sanskrit (देवनागरी)</div>
+                        <div class="text-amber-700/80">Romanized (Phonetically Correct Typing)</div>
+                        <div class="text-red-700">Nepali (नेपाली)</div>
+                    </div>
+                `);
+
+                chalisaData.forEach((line, index) => {
+                    let stanzaLabel = '';
+                    let className = '';
+
+                    if (line.type === 'chaupai') {
+                        if (index >= 2 && (index - 2) % 2 === 0) {
+                            stanzaCounter++;
+                            if (stanzaCounter % 5 === 0) {
+                                className = 'bg-amber-100/50 rounded-lg p-2';
+                            }
+                        }
+                        stanzaLabel = stanzaCounter > 0 ? `<span class="font-bold text-sm text-red-700/70 mr-2 md:mr-0">${stanzaCounter}.</span>` : '';
+                        
+                    } else if (line.type === 'invocation' || line.type === 'doha') {
+                        stanzaCounter = 0;
+                        const title = line.type === 'invocation' ? 'Invocation (दोहा)' : 'Closing Doha (दोहा)';
+                        linesHtml.push(`<h2 class="text-xl font-bold text-center text-red-700 pt-4 pb-2 border-t mt-4">${title}</h2>`);
+                    }
+
+                    linesHtml.push(`
+                        <div class="stanza-container ${className}">
+                            <div class="language-grid items-center">
+                                <div class="sanskrit">
+                                    <span class="md:hidden font-bold text-sm text-red-700/70">Sanskrit: </span>
+                                    ${stanzaLabel}${line.sanskrit}
+                                </div>
+                                <div class="romanized">
+                                    <span class="md:hidden font-bold text-sm text-amber-700/70">Romanized: </span>
+                                    ${line.romanized}
+                                </div>
+                                <div class="nepali">
+                                    <span class="md:hidden font-bold text-sm text-red-700/70">Nepali: </span>
+                                    ${line.nepali}
+                                </div>
+                            </div>
+                        </div>
+                    `);
+                });
+
+                fullTextDisplay.innerHTML = linesHtml.join('');
+            }
+
+            // --- Event Listeners and Initialization ---
+
+            const originalStartScreenHTML = startScreen.innerHTML;
+
+            // Click the wrapper to focus the hidden input field
+            typingWrapper.addEventListener('click', () => userInput.focus());
+
+            // Start Button Listener
+            startButton.addEventListener('click', startGame);
+
+            // Input Check Listener (The core logic runs on every input event)
+            userInput.addEventListener('input', checkInput);
+            
+            // Next Button Listener
+            nextButton.addEventListener('click', nextLine);
+
+            // ENTER key listener (works when line is complete and button is not disabled)
+            userInput.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' && !nextButton.disabled) {
+                    event.preventDefault(); // Stop the default Enter action
+                    nextLine();
+                }
+            });
+            
+            // Line Selector Listener
+            lineSelector.addEventListener('change', jumpToLine);
+
+            // Toggle Full Text View
+            toggleFullTextButton.addEventListener('click', () => {
+                const isHidden = fullTextDisplay.classList.contains('hidden');
+                if (isHidden) {
+                    renderFullChalisa();
+                    fullTextDisplay.classList.remove('hidden');
+                    toggleFullTextButton.textContent = 'Hide Full Chalisa Text';
+                } else {
+                    fullTextDisplay.classList.add('hidden');
+                    toggleFullTextButton.textContent = 'View Full Chalisa Text';
+                }
+            });
+
+            // Initial setup
+            populateLineSelector();
+            progressDisplay.textContent = `Line 0 / ${totalLines}`;
+        });
+    </script>
+</body>
+</html>
